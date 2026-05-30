@@ -1,0 +1,324 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`query-generation > query filter beginsWith 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_title": "title",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":filter_title": "Hello",
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "begins_with(#filter_title, :filter_title)",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query filter between 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_score": "score",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":filter_score1": 1,
+    ":filter_score2": 10,
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "#filter_score BETWEEN :filter_score1 AND :filter_score2",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query filter contains 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_title": "title",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":filter_title": "hello",
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "contains(#filter_title, :filter_title)",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query filter equals 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_status": "status",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":filter_status": "published",
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "#filter_status = :filter_status",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query filter exists 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_status": "status",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "attribute_exists(#filter_status)",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query filter greaterThan 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_score": "score",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":filter_score": 5,
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "#filter_score > :filter_score",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query filter lessThanOrEquals 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_score": "score",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":filter_score": 10,
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "#filter_score <= :filter_score",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query filter notContains 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_title": "title",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":filter_title": "spam",
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "not contains(#filter_title, :filter_title)",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query filter notEquals 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_status": "status",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":filter_status": "draft",
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "#filter_status <> :filter_status",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query filter notExists 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_status": "status",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "attribute_not_exists(#filter_status)",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query filter with GSI 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#key_sk": "sk",
+    "#key_type": "type",
+  },
+  "ExpressionAttributeValues": {
+    ":key_sk": "post#",
+    ":key_type": "post",
+  },
+  "FilterExpression": undefined,
+  "IndexName": "gsi_type",
+  "KeyConditionExpression": "#key_type = :key_type AND begins_with(#key_sk, :key_sk)",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query hash and range key 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#key_pk": "pk",
+    "#key_sk": "sk",
+  },
+  "ExpressionAttributeValues": {
+    ":key_pk": "post#123",
+    ":key_sk": "123",
+  },
+  "FilterExpression": undefined,
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk AND #key_sk = :key_sk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query hash key 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": undefined,
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query multiple filters 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#filter_score": "score",
+    "#filter_status": "status",
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":filter_score": 5,
+    ":filter_status": "published",
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": "#filter_status = :filter_status AND #filter_score > :filter_score",
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query range key beginsWith 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#key_pk": "pk",
+    "#key_sk": "sk",
+  },
+  "ExpressionAttributeValues": {
+    ":key_pk": "post#123",
+    ":key_sk": "post#",
+  },
+  "FilterExpression": undefined,
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk AND begins_with(#key_sk, :key_sk)",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query range key between 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#key_pk": "pk",
+    "#key_sk": "sk",
+  },
+  "ExpressionAttributeValues": {
+    ":key_pk": "post#123",
+    ":key_sk1": "a",
+    ":key_sk2": "z",
+  },
+  "FilterExpression": undefined,
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk AND #key_sk BETWEEN :key_sk1 AND :key_sk2",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query range key greaterThan 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#key_pk": "pk",
+    "#key_sk": "sk",
+  },
+  "ExpressionAttributeValues": {
+    ":key_pk": "post#123",
+    ":key_sk": "a",
+  },
+  "FilterExpression": undefined,
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk AND #key_sk > :key_sk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query range key lessThan 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#key_pk": "pk",
+    "#key_sk": "sk",
+  },
+  "ExpressionAttributeValues": {
+    ":key_pk": "post#123",
+    ":key_sk": "z",
+  },
+  "FilterExpression": undefined,
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk AND #key_sk < :key_sk",
+  "TableName": "test-table",
+}
+`;
+
+exports[`query-generation > query with options 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#key_pk": "pk",
+  },
+  "ExpressionAttributeValues": {
+    ":key_pk": "post#123",
+  },
+  "FilterExpression": undefined,
+  "IndexName": undefined,
+  "KeyConditionExpression": "#key_pk = :key_pk",
+  "Limit": 10,
+  "ScanIndexForward": false,
+  "TableName": "test-table",
+}
+`;

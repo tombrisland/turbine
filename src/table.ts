@@ -14,7 +14,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 
 import { TurbineError } from "./error";
-import { Table, TableDefinition } from "./types/table";
+import type { Table, TableDefinition } from "./types/table";
 
 export const defineTable = (definition: TableDefinition): Table => {
   let client: DynamoDBDocumentClient;

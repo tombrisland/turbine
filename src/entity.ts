@@ -13,7 +13,7 @@ import {
   resolveIndex,
   resolveKeyValues,
 } from "./parsing";
-import { Entity, EntityDefinition } from "./types/entity";
+import type { Entity, EntityDefinition } from "./types/entity";
 
 export const defineEntity = <S extends z.ZodObject>(
   definition: EntityDefinition<S>,
@@ -34,9 +34,9 @@ export const defineEntity = <S extends z.ZodObject>(
 
   entity.update = async (key, patch) => {
     key.index = "table";
-    const [, Key] = await resolveIndex(definition, key);
-
+    const [, Key] = resolveIndex(definition, key);
     const payload = await expandPartialPayload(definition, patch);
+
     for (const field of Object.keys(Key)) {
       if (field in payload) {
         delete payload[field];
@@ -53,7 +53,7 @@ export const defineEntity = <S extends z.ZodObject>(
   };
 
   entity.query = async (key, options) => {
-    const [IndexName, Key] = await resolveIndex(definition, key);
+    const [IndexName, Key] = resolveIndex(definition, key);
 
     const { filters, ...dynamoDbOptions } = options || {};
     const query = generateQueryExpression(Key, filters);
@@ -92,7 +92,7 @@ export const defineEntity = <S extends z.ZodObject>(
 
   entity.get = async (key, options) => {
     key.index = "table";
-    const [, Key] = await resolveIndex(definition, key);
+    const [, Key] = resolveIndex(definition, key);
     const { Item } = await definition.table.get({
       ...options,
       Key: resolveKeyValues(Key),
@@ -105,7 +105,7 @@ export const defineEntity = <S extends z.ZodObject>(
 
   entity.delete = async (key) => {
     key.index = "table";
-    const [, Key] = await resolveIndex(definition, key);
+    const [, Key] = resolveIndex(definition, key);
     await definition.table.delete({
       Key: resolveKeyValues(Key),
     });

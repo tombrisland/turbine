@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`delete-generation > delete by primary key 1`] = `
+{
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`delete-generation > key arrays are joined with # 1`] = `
+{
+  "Key": {
+    "pk": "user#abc-def",
+    "sk": "test@example.com",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`delete-generation > table name is included 1`] = `
+{
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "TableName": "test-table",
+}
+`;

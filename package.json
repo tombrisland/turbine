@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Entity mapping and query library for DynamoDB",
   "main": "dist/index.js",
+  "packageManager": "yarn@1.22.22",
   "files": [
     "dist"
   ],

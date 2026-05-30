@@ -1,8 +1,8 @@
-import { GetCommandInput, QueryCommandInput } from "@aws-sdk/lib-dynamodb";
+import type { GetCommandInput, QueryCommandInput } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
 
-import { KeyDefinition } from "./key";
-import { Table, TableIndexDefinition } from "./table";
+import type { KeyDefinition } from "./key";
+import type { Table, TableIndexDefinition } from "./table";
 
 export type EntityDefinition<S extends z.ZodObject> = {
   table: Table;

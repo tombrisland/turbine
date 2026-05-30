@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { TurbineError } from "./error";
 import { buildValue } from "./expressions";
-import {
+import type {
   Entity,
   EntityDefinition,
   IndexName,
@@ -12,7 +12,7 @@ import {
   QueryKey,
   TableKey,
 } from "./types/entity";
-import { KeyDefinitionPrimitive } from "./types/key";
+import type { KeyDefinitionPrimitive } from "./types/key";
 
 export const parsePagedResult = async <D extends EntityDefinition<z.ZodObject>>(
   definition: D,
