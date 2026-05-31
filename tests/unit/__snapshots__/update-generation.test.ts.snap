@@ -20,6 +20,29 @@ exports[`update-generation > update a single field 1`] = `
 }
 `;
 
+exports[`update-generation > update merges condition and update ExpressionAttributeNames 1`] = `
+{
+  "ConditionExpression": "#condition_age > :condition_age",
+  "ExpressionAttributeNames": {
+    "#condition_age": "age",
+    "#createdAt": "createdAt",
+    "#name": "name",
+  },
+  "ExpressionAttributeValues": {
+    ":condition_age": 18,
+    ":createdAt": "2012-02-18T00:00:00.000Z",
+    ":name": "Alice",
+  },
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "ReturnValues": "ALL_NEW",
+  "TableName": "test-table",
+  "UpdateExpression": "SET #name = :name, #createdAt = if_not_exists(#createdAt, :createdAt)",
+}
+`;
+
 exports[`update-generation > update multiple fields 1`] = `
 {
   "ExpressionAttributeNames": {
@@ -94,6 +117,28 @@ exports[`update-generation > update with array key joined 1`] = `
   "Key": {
     "pk": "user#abc-def",
     "sk": "test@example.com",
+  },
+  "ReturnValues": "ALL_NEW",
+  "TableName": "test-table",
+  "UpdateExpression": "SET #name = :name, #createdAt = if_not_exists(#createdAt, :createdAt)",
+}
+`;
+
+exports[`update-generation > update with condition expression 1`] = `
+{
+  "ConditionExpression": "attribute_exists(#condition_name)",
+  "ExpressionAttributeNames": {
+    "#condition_name": "name",
+    "#createdAt": "createdAt",
+    "#name": "name",
+  },
+  "ExpressionAttributeValues": {
+    ":createdAt": "2012-02-18T00:00:00.000Z",
+    ":name": "Alice",
+  },
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
   },
   "ReturnValues": "ALL_NEW",
   "TableName": "test-table",

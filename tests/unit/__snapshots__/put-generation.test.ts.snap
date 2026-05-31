@@ -42,6 +42,47 @@ exports[`put-generation > put strips unknown field 1`] = `
 }
 `;
 
+exports[`put-generation > put with condition expression 1`] = `
+{
+  "ConditionExpression": "attribute_not_exists(#condition_email)",
+  "ExpressionAttributeNames": {
+    "#condition_email": "email",
+  },
+  "ExpressionAttributeValues": {},
+  "Item": {
+    "email": "user@example.com",
+    "id": "123",
+    "pk": "user#123",
+    "role": "user",
+    "sk": "user@example.com",
+    "type": "user",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`put-generation > put with multiple conditions 1`] = `
+{
+  "ConditionExpression": "attribute_not_exists(#condition_email) AND #condition_role = :condition_role",
+  "ExpressionAttributeNames": {
+    "#condition_email": "email",
+    "#condition_role": "role",
+  },
+  "ExpressionAttributeValues": {
+    ":condition_role": "user",
+  },
+  "Item": {
+    "email": "user@example.com",
+    "id": "123",
+    "pk": "user#123",
+    "role": "user",
+    "sk": "user@example.com",
+    "type": "user",
+  },
+  "TableName": "test-table",
+}
+`;
+
 exports[`put-generation > put with optional fields 1`] = `
 {
   "Item": {

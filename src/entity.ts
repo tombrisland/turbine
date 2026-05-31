@@ -2,6 +2,7 @@ import { ReturnValue } from "@aws-sdk/client-dynamodb";
 import { z } from "zod";
 
 import {
+  generateConditionExpression,
   generateQueryExpression,
   generateUpdateExpression,
 } from "./expressions";
@@ -23,18 +24,20 @@ export const defineEntity = <S extends z.ZodObject>(
     definition,
   };
 
-  entity.put = async (data) => {
+  entity.put = async (data, options) => {
     const payload = await expandPayload(definition, data);
+    const condition = generateConditionExpression(options?.conditions);
+
     await definition.table.put({
       Item: payload,
+      ...condition,
     });
 
     return parseInstance(definition, entity, payload);
   };
 
-  entity.update = async (key, patch) => {
-    key.index = "table";
-    const [, Key] = resolveIndex(definition, key);
+  entity.update = async (key, patch, options) => {
+    const [, Key] = resolveIndex(definition, { ...key, index: "table" });
     const payload = await expandPartialPayload(definition, patch);
 
     for (const field of Object.keys(Key)) {
@@ -43,9 +46,21 @@ export const defineEntity = <S extends z.ZodObject>(
       }
     }
 
+    const update = generateUpdateExpression(payload, ["createdAt"]);
+    const condition = generateConditionExpression(options?.conditions);
+
     const { Attributes } = await definition.table.update({
       Key: resolveKeyValues(Key),
-      ...generateUpdateExpression(payload, ["createdAt"]),
+      ...update,
+      ...condition,
+      ExpressionAttributeNames: {
+        ...update.ExpressionAttributeNames,
+        ...condition.ExpressionAttributeNames,
+      },
+      ExpressionAttributeValues: {
+        ...update.ExpressionAttributeValues,
+        ...condition.ExpressionAttributeValues,
+      },
       ReturnValues: ReturnValue.ALL_NEW,
     });
 
@@ -91,8 +106,7 @@ export const defineEntity = <S extends z.ZodObject>(
   };
 
   entity.get = async (key, options) => {
-    key.index = "table";
-    const [, Key] = resolveIndex(definition, key);
+    const [, Key] = resolveIndex(definition, { ...key, index: "table" });
     const { Item } = await definition.table.get({
       ...options,
       Key: resolveKeyValues(Key),
@@ -103,11 +117,13 @@ export const defineEntity = <S extends z.ZodObject>(
     return parseInstance(definition, entity, Item);
   };
 
-  entity.delete = async (key) => {
-    key.index = "table";
-    const [, Key] = resolveIndex(definition, key);
+  entity.delete = async (key, options) => {
+    const [, Key] = resolveIndex(definition, { ...key, index: "table" });
+    const condition = generateConditionExpression(options?.conditions);
+
     await definition.table.delete({
       Key: resolveKeyValues(Key),
+      ...condition,
     });
   };
 

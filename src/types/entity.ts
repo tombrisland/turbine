@@ -56,6 +56,10 @@ export type Filters<D extends EntityDefinition<z.ZodObject>> = {
   [K in keyof z.infer<D["schema"]> & keyof D["keys"]]?: FilterExpression;
 };
 
+export type Conditions<D extends EntityDefinition<z.ZodObject>> = {
+  [K in keyof z.infer<D["schema"]>]?: FilterExpression;
+};
+
 export type QueryOptions<D extends EntityDefinition<z.ZodObject>> = Omit<
   QueryCommandInput,
   | "TableName"
@@ -104,13 +108,16 @@ export type Entity<D extends EntityDefinition<z.ZodObject>> = {
   put(
     data: Partial<z.infer<D["schema"]>> &
       Omit<z.infer<D["schema"]>, keyof D["keys"]>,
+    options?: { conditions?: Conditions<D> },
   ): Promise<Instance<Entity<D>>>;
   update(
     key: TableKey<D["table"]["definition"]["indexes"]["table"]>,
     patch: Partial<z.infer<D["schema"]>>,
+    options?: { conditions?: Conditions<D> },
   ): Promise<Instance<Entity<D>>>;
   delete(
     key: TableKey<D["table"]["definition"]["indexes"]["table"]>,
+    options?: { conditions?: Conditions<D> },
   ): Promise<void>;
 };
 

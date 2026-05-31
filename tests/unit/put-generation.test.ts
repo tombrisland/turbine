@@ -63,6 +63,33 @@ describe("put-generation", () => {
     expect(input).toMatchSnapshot();
   });
 
+  it("put with condition expression", async () => {
+    const input: PutCommandInput = await captureDynamoDBCommand(table, () =>
+      user.put(
+        { id: "123", email: "user@example.com" },
+        { conditions: { email: { notExists: true } } },
+      ),
+    );
+
+    expect(input.ConditionExpression).toBe(
+      "attribute_not_exists(#condition_email)",
+    );
+    expect(input).toMatchSnapshot();
+  });
+
+  it("put with multiple conditions", async () => {
+    const input: PutCommandInput = await captureDynamoDBCommand(table, () =>
+      user.put(
+        { id: "123", email: "user@example.com" },
+        { conditions: { email: { notExists: true }, role: { equals: "user" } } },
+      ),
+    );
+
+    expect(input.ConditionExpression).toContain("attribute_not_exists");
+    expect(input.ConditionExpression).toContain("=");
+    expect(input).toMatchSnapshot();
+  });
+
   it("put strips unknown field", async () => {
     const input: PutCommandInput = await captureDynamoDBCommand(table, () =>
       // @ts-expect-error unknown field

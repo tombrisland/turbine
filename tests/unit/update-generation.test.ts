@@ -3,6 +3,7 @@ import z from "zod";
 
 import { captureDynamoDBCommand } from "./generation-test-utils";
 import { defineEntity, defineTable } from "../../src";
+import type { UpdateCommandInput } from "@aws-sdk/lib-dynamodb";
 
 const table = defineTable({
   name: "test-table",
@@ -78,6 +79,39 @@ describe("update-generation", () => {
       { Attributes: defaultUser },
     );
 
+    expect(input).toMatchSnapshot();
+  });
+
+  it("update with condition expression", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        user.update(
+          { pk: ["user", "123"], sk: "user@example.com" },
+          { name: "Alice" },
+          { conditions: { name: { exists: true } } },
+        ),
+      { Attributes: defaultUser },
+    );
+
+    expect(input).toMatchSnapshot();
+  });
+
+  it("update merges condition and update ExpressionAttributeNames", async () => {
+    const input: UpdateCommandInput = await captureDynamoDBCommand(
+      table,
+      () =>
+        user.update(
+          { pk: ["user", "123"], sk: "user@example.com" },
+          { name: "Alice" },
+          { conditions: { age: { greaterThan: 18 } } },
+        ),
+      { Attributes: defaultUser },
+    );
+
+    expect(input.ExpressionAttributeNames).toHaveProperty("#name");
+    expect(input.ExpressionAttributeNames).toHaveProperty("#condition_age");
+    expect(input.ConditionExpression).toBe("#condition_age > :condition_age");
     expect(input).toMatchSnapshot();
   });
 

@@ -161,6 +161,21 @@ export const generateFilterExpression = <
   };
 };
 
+export const generateConditionExpression = <
+  D extends EntityDefinition<z.ZodObject>,
+>(
+  conditions?: Filters<D>,
+) => {
+  const result = generateFilterExpression(conditions, "condition");
+  if (!result.FilterExpression) return {};
+
+  return {
+    ConditionExpression: result.FilterExpression,
+    ExpressionAttributeNames: result.ExpressionAttributeNames,
+    ExpressionAttributeValues: result.ExpressionAttributeValues,
+  };
+};
+
 export const generateUpdateExpression = (
   patch: Record<string, unknown>,
   doNotOverwrite: string[] = [],

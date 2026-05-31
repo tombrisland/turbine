@@ -1,4 +1,4 @@
-import { DeleteCommandInput } from "@aws-sdk/lib-dynamodb";
+import type { DeleteCommandInput } from "@aws-sdk/lib-dynamodb";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import z from "zod";
 
@@ -30,9 +30,11 @@ beforeEach(() => {
 
 describe("delete-generation", () => {
   it("delete by primary key", async () => {
-    const input = await captureDynamoDBCommand(table, () =>
+    const input: DeleteCommandInput = await captureDynamoDBCommand(table, () =>
       user.delete({ pk: ["user", "123"], sk: "user@example.com" }),
     );
+
+    expect(input.TableName).toBe("test-table");
     expect(input).toMatchSnapshot();
   });
 
@@ -40,15 +42,39 @@ describe("delete-generation", () => {
     const input: DeleteCommandInput = await captureDynamoDBCommand(table, () =>
       user.delete({ pk: ["user", "abc-def"], sk: "test@example.com" }),
     );
+
     expect(input?.Key?.pk).toBe("user#abc-def");
     expect(input).toMatchSnapshot();
   });
 
-  it("table name is included", async () => {
+  it("delete with exists condition", async () => {
     const input: DeleteCommandInput = await captureDynamoDBCommand(table, () =>
-      user.delete({ pk: ["user", "123"], sk: "user@example.com" }),
+      user.delete(
+        { pk: ["user", "123"], sk: "user@example.com" },
+        { conditions: { email: { exists: true } } },
+      ),
     );
-    expect(input.TableName).toBe("test-table");
+
+    expect(input.ConditionExpression).toBe(
+      "attribute_exists(#condition_email)",
+    );
+    expect(input).toMatchSnapshot();
+  });
+
+  it("delete with equals condition", async () => {
+    const input: DeleteCommandInput = await captureDynamoDBCommand(table, () =>
+      user.delete(
+        { pk: ["user", "123"], sk: "user@example.com" },
+        { conditions: { email: { equals: "user@example.com" } } },
+      ),
+    );
+
+    expect(input.ConditionExpression).toBe(
+      "#condition_email = :condition_email",
+    );
+    expect(input.ExpressionAttributeValues).toMatchObject({
+      ":condition_email": "user@example.com",
+    });
     expect(input).toMatchSnapshot();
   });
 });
