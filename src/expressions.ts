@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { EntityDefinition, Filters } from "./types/entity";
+import type {
+  EntityDefinition,
+  FilterExpression,
+  Filters,
+} from "./types/entity";
 
 export const generateAttributeValues = (
   patch: Record<string, unknown>,
@@ -65,94 +69,94 @@ export const generateFilterExpression = <
   filters?: Filters<D>,
   prefix = "filter",
 ) => {
-  if (!filters || filters.length === 0) {
+  if (!filters || Object.keys(filters).length === 0) {
     return {};
   }
 
   const ExpressionAttributeNames: Record<string, string> = {};
   const ExpressionAttributeValues: Record<string, unknown> = {};
 
-  const filterExpressions = Object.entries(filters).map(
-    ([attr, expression]) => {
-      const attributeName = `#${prefix}_${attr.toString()}`;
-      const attributeValue = `:${prefix}_${attr.toString()}`;
+  const filterExpressions = (
+    Object.entries(filters) as [string, FilterExpression][]
+  ).map(([attr, expression]) => {
+    const attributeName = `#${prefix}_${attr.toString()}`;
+    const attributeValue = `:${prefix}_${attr.toString()}`;
 
-      ExpressionAttributeNames[attributeName] = attr.toString();
+    ExpressionAttributeNames[attributeName] = attr.toString();
 
-      if (typeof expression === "object" && expression !== null) {
-        if ("equals" in expression) {
-          ExpressionAttributeValues[attributeValue] = buildValue(
-            expression.equals,
-          );
-          return `${attributeName} = ${attributeValue}`;
-        }
-        if ("notEquals" in expression) {
-          ExpressionAttributeValues[attributeValue] = buildValue(
-            expression.notEquals,
-          );
-          return `${attributeName} <> ${attributeValue}`;
-        }
-        if ("greaterThan" in expression) {
-          ExpressionAttributeValues[attributeValue] = buildValue(
-            expression.greaterThan,
-          );
-          return `${attributeName} > ${attributeValue}`;
-        }
-        if ("lessThan" in expression) {
-          ExpressionAttributeValues[attributeValue] = buildValue(
-            expression.lessThan,
-          );
-          return `${attributeName} < ${attributeValue}`;
-        }
-        if ("greaterThanOrEquals" in expression) {
-          ExpressionAttributeValues[attributeValue] = buildValue(
-            expression.greaterThanOrEquals,
-          );
-          return `${attributeName} >= ${attributeValue}`;
-        }
-        if ("lessThanOrEquals" in expression) {
-          ExpressionAttributeValues[attributeValue] = buildValue(
-            expression.lessThanOrEquals,
-          );
-          return `${attributeName} <= ${attributeValue}`;
-        }
-        if ("between" in expression) {
-          const [start, end] = expression.between;
-          ExpressionAttributeValues[attributeValue + "1"] = buildValue(start);
-          ExpressionAttributeValues[attributeValue + "2"] = buildValue(end);
-          return `${attributeName} BETWEEN ${attributeValue + "1"} AND ${attributeValue + "2"}`;
-        }
-        if ("contains" in expression) {
-          ExpressionAttributeValues[attributeValue] = buildValue(
-            expression.contains,
-          );
-          return `contains(${attributeName}, ${attributeValue})`;
-        }
-        if ("notContains" in expression) {
-          ExpressionAttributeValues[attributeValue] = buildValue(
-            expression.notContains,
-          );
-          return `not contains(${attributeName}, ${attributeValue})`;
-        }
-        if ("beginsWith" in expression) {
-          ExpressionAttributeValues[attributeValue] = buildValue(
-            expression.beginsWith,
-          );
-          return `begins_with(${attributeName}, ${attributeValue})`;
-        }
-        if ("exists" in expression) {
-          return `attribute_exists(${attributeName})`;
-        }
-        if ("notExists" in expression) {
-          return `attribute_not_exists(${attributeName})`;
-        }
+    if (typeof expression === "object" && expression !== null) {
+      if ("equals" in expression) {
+        ExpressionAttributeValues[attributeValue] = buildValue(
+          expression.equals,
+        );
+        return `${attributeName} = ${attributeValue}`;
       }
+      if ("notEquals" in expression) {
+        ExpressionAttributeValues[attributeValue] = buildValue(
+          expression.notEquals,
+        );
+        return `${attributeName} <> ${attributeValue}`;
+      }
+      if ("greaterThan" in expression) {
+        ExpressionAttributeValues[attributeValue] = buildValue(
+          expression.greaterThan,
+        );
+        return `${attributeName} > ${attributeValue}`;
+      }
+      if ("lessThan" in expression) {
+        ExpressionAttributeValues[attributeValue] = buildValue(
+          expression.lessThan,
+        );
+        return `${attributeName} < ${attributeValue}`;
+      }
+      if ("greaterThanOrEquals" in expression) {
+        ExpressionAttributeValues[attributeValue] = buildValue(
+          expression.greaterThanOrEquals,
+        );
+        return `${attributeName} >= ${attributeValue}`;
+      }
+      if ("lessThanOrEquals" in expression) {
+        ExpressionAttributeValues[attributeValue] = buildValue(
+          expression.lessThanOrEquals,
+        );
+        return `${attributeName} <= ${attributeValue}`;
+      }
+      if ("between" in expression) {
+        const [start, end] = expression.between;
+        ExpressionAttributeValues[attributeValue + "1"] = buildValue(start);
+        ExpressionAttributeValues[attributeValue + "2"] = buildValue(end);
+        return `${attributeName} BETWEEN ${attributeValue + "1"} AND ${attributeValue + "2"}`;
+      }
+      if ("contains" in expression) {
+        ExpressionAttributeValues[attributeValue] = buildValue(
+          expression.contains,
+        );
+        return `contains(${attributeName}, ${attributeValue})`;
+      }
+      if ("notContains" in expression) {
+        ExpressionAttributeValues[attributeValue] = buildValue(
+          expression.notContains,
+        );
+        return `not contains(${attributeName}, ${attributeValue})`;
+      }
+      if ("beginsWith" in expression) {
+        ExpressionAttributeValues[attributeValue] = buildValue(
+          expression.beginsWith,
+        );
+        return `begins_with(${attributeName}, ${attributeValue})`;
+      }
+      if ("exists" in expression) {
+        return `attribute_exists(${attributeName})`;
+      }
+      if ("notExists" in expression) {
+        return `attribute_not_exists(${attributeName})`;
+      }
+    }
 
-      // Default: equals
-      ExpressionAttributeValues[attributeValue] = buildValue(expression);
-      return `${attributeName} = ${attributeValue}`;
-    },
-  );
+    // Default: equals
+    ExpressionAttributeValues[attributeValue] = buildValue(expression);
+    return `${attributeName} = ${attributeValue}`;
+  });
 
   return {
     FilterExpression: filterExpressions.join(" AND "),

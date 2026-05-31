@@ -1,4 +1,4 @@
-import { PutCommandInput } from "@aws-sdk/lib-dynamodb";
+import type { PutCommandInput } from "@aws-sdk/lib-dynamodb";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import z from "zod";
 
@@ -81,7 +81,9 @@ describe("put-generation", () => {
     const input: PutCommandInput = await captureDynamoDBCommand(table, () =>
       user.put(
         { id: "123", email: "user@example.com" },
-        { conditions: { email: { notExists: true }, role: { equals: "user" } } },
+        {
+          conditions: { email: { notExists: true }, role: { equals: "user" } },
+        },
       ),
     );
 

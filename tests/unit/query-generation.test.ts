@@ -22,6 +22,9 @@ const post = defineEntity({
     status: z.string().optional(),
     score: z.number().optional(),
     tags: z.array(z.string()).optional(),
+    object: z.object({
+      nested1: z.string(),
+    }),
   }),
   keys: {
     type: () => "post",
@@ -102,6 +105,20 @@ describe("query-generation", () => {
         post.query(
           { pk: ["post", "123"] },
           { filters: { status: { equals: "published" } } },
+        ),
+      emptyResult,
+    );
+
+    expect(input).toMatchSnapshot();
+  });
+
+  it("query nested filter equals", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        post.query(
+          { pk: ["post", "123"] },
+          { filters: { "object.nested1": { equals: "nested2" } } },
         ),
       emptyResult,
     );

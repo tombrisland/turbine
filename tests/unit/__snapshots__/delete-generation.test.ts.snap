@@ -10,21 +10,6 @@ exports[`delete-generation > delete by primary key 1`] = `
 }
 `;
 
-exports[`delete-generation > delete with condition expression 1`] = `
-{
-  "ConditionExpression": "attribute_exists(#condition_email)",
-  "ExpressionAttributeNames": {
-    "#condition_email": "email",
-  },
-  "ExpressionAttributeValues": {},
-  "Key": {
-    "pk": "user#123",
-    "sk": "user@example.com",
-  },
-  "TableName": "test-table",
-}
-`;
-
 exports[`delete-generation > delete with equals condition 1`] = `
 {
   "ConditionExpression": "#condition_email = :condition_email",
@@ -42,21 +27,26 @@ exports[`delete-generation > delete with equals condition 1`] = `
 }
 `;
 
-exports[`delete-generation > key arrays are joined with # 1`] = `
+exports[`delete-generation > delete with exists condition 1`] = `
 {
+  "ConditionExpression": "attribute_exists(#condition_email)",
+  "ExpressionAttributeNames": {
+    "#condition_email": "email",
+  },
+  "ExpressionAttributeValues": {},
   "Key": {
-    "pk": "user#abc-def",
-    "sk": "test@example.com",
+    "pk": "user#123",
+    "sk": "user@example.com",
   },
   "TableName": "test-table",
 }
 `;
 
-exports[`delete-generation > table name is included 1`] = `
+exports[`delete-generation > key arrays are joined with # 1`] = `
 {
   "Key": {
-    "pk": "user#123",
-    "sk": "user@example.com",
+    "pk": "user#abc-def",
+    "sk": "test@example.com",
   },
   "TableName": "test-table",
 }

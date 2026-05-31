@@ -13,6 +13,7 @@ import type {
   TableKey,
 } from "./types/entity";
 import type { KeyDefinitionPrimitive } from "./types/key";
+import type { TableIndexDefinition } from "./types/table";
 
 export const parsePagedResult = async <D extends EntityDefinition<z.ZodObject>>(
   definition: D,
@@ -56,11 +57,15 @@ export const resolveKeyValues = (key: Record<string, any>) =>
     {},
   );
 
-export const resolveIndex = <D extends EntityDefinition<z.ZodObject>>(
+export const resolveIndex = <
+  D extends EntityDefinition<z.ZodObject>,
+  IX extends Record<string, TableIndexDefinition>,
+>(
   definition: D,
-  key: QueryKey<D>,
+  key: QueryKey<IX>,
 ): [IndexName, any] => {
-  const indexName = (key.index || "table") as IndexName;
+  const k = key as Record<string, unknown>;
+  const indexName = (k["index"] || "table") as IndexName;
   const index = definition.table.definition.indexes[indexName];
 
   if (!index) {
@@ -70,19 +75,19 @@ export const resolveIndex = <D extends EntityDefinition<z.ZodObject>>(
   }
 
   if (
-    !(index.hashKey in key) ||
-    key[index.hashKey] === null ||
-    key[index.hashKey] === undefined
+    !(index.hashKey in k) ||
+    k[index.hashKey] === null ||
+    k[index.hashKey] === undefined
   ) {
     throw new TurbineError(`No value found for hash key "${index.hashKey}"`);
   }
 
-  const resolvedKey = {
-    [index.hashKey]: key[index.hashKey],
+  const resolvedKey: Record<string, unknown> = {
+    [index.hashKey]: k[index.hashKey],
   };
 
-  if (index.rangeKey && key[index.rangeKey] !== undefined) {
-    resolvedKey[index.rangeKey] = key[index.rangeKey];
+  if (index.rangeKey && k[index.rangeKey] !== undefined) {
+    resolvedKey[index.rangeKey] = k[index.rangeKey];
   }
 
   return [indexName, resolvedKey];
@@ -146,7 +151,7 @@ export const parseInstance = async <D extends EntityDefinition<z.ZodObject>>(
   const result = await definition.schema.parseAsync(input);
 
   result.update = async (patch: Partial<z.infer<D["schema"]>>) => {
-    const index = definition.table.definition.indexes.table;
+    const index = definition.table.definition.tableIndex;
     const typedInput = input as Record<string, KeyDefinitionPrimitive>;
 
     const updated = await entity.update(

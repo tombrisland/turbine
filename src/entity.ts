@@ -15,12 +15,17 @@ import {
   resolveKeyValues,
 } from "./parsing";
 import type { Entity, EntityDefinition } from "./types/entity";
+import type { TableIndexDefinition } from "./types/table";
 
-export const defineEntity = <S extends z.ZodObject>(
-  definition: EntityDefinition<S>,
-): Entity<EntityDefinition<S>> => {
+export const defineEntity = <
+  S extends z.ZodObject,
+  TI extends TableIndexDefinition,
+  IX extends Record<string, TableIndexDefinition>,
+>(
+  definition: EntityDefinition<S, TI, IX>,
+): Entity<EntityDefinition<S, TI, IX>, IX> => {
   // @ts-expect-error missing
-  const entity: Entity<EntityDefinition<S>> = {
+  const entity: Entity<EntityDefinition<S, TI, IX>, IX> = {
     definition,
   };
 
