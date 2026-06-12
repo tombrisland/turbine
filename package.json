@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "test": "yarn test:types && yarn test:unit",
     "test:types": "yarn tsc --noEmit tests/type-checking.ts --esModuleInterop",
-    "test:unit": "vitest . --coverage",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration-localstack",
     "prepare": "yarn build",
     "release": "semantic-release"
   },

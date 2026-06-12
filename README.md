@@ -78,6 +78,25 @@ const one = await users.queryOne({
   sk: { beginsWith: "user@" },
 });
 const all = await users.queryAll({ pk: ["user", user.id] });
+
+// Conditional writes - only update if the item already exists
+await users.update(
+  { pk: ["user", user.id], sk: user.email },
+  { name: "Randy Newman" },
+  { conditions: { email: { exists: true } } },
+);
+
+// Conditional put - only insert if no item with this pk/sk exists yet
+await users.put(
+  { id: "00000000-0000-0000-0000-000000000002", email: "new@example.com" },
+  { conditions: { pk: { notExists: true } } },
+);
+
+// Conditional delete - only delete if the name matches
+await users.delete(
+  { pk: ["user", user.id], sk: user.email },
+  { conditions: { name: "Randy Newman" } },
+);
 ```
 
 ## Defining tables
@@ -126,31 +145,81 @@ const user = defineEntity({
 
 ## Operations
 
-- put(data): validates with Zod, expands keys, writes, and returns the parsed instance.
-- get(key): requires key specification using actual key names (e.g., `pk`, `sk`), reads, returns instance or null.
-- update(key, patch): requires key specification, validates/expands, updates, and returns the new instance.
-- query(key, options?): requires key specification; supports partial expressions like `{beginsWith: "prefix"}`. Returns a paged array with `lastEvaluatedKey` and `next()`.
-- queryOne(key, options?): first match or null.
-- queryAll(key, options?): collects all pages for convenience.
-- delete(key): requires key specification, deletes the item.
+- `put(data, options?)`: validates with Zod, expands keys, writes, and returns the parsed instance.
+- `get(key)`: requires key specification using actual key names (e.g., `pk`, `sk`), reads, returns instance or null.
+- `update(key, patch, options?)`: requires key specification, validates/expands, updates, and returns the new instance.
+- `query(key, options?)`: requires key specification; supports partial expressions like `{beginsWith: "prefix"}`. Returns a paged array with `lastEvaluatedKey` and `next()`.
+- `queryOne(key, options?)`: first match or null.
+- `queryAll(key, options?)`: collects all pages for convenience.
+- `delete(key, options?)`: requires key specification, deletes the item.
 
 ### Key Specification
 
-Keys must be specified precisely using the actual key names defined in your entity. Key arrays are automatically converted to strings joined with `#`.
+Keys must be specified precisely using the actual names specified in your table. Key arrays are automatically converted to strings joined with `#`. TypeScript enforces the correct shape for each index — the hash key is required and the range key is typed as a `RangeKeyConditionExpression`.
 
 ```ts
 // Get with precise keys
 await users.get({ pk: ["user", "123"], sk: "user@example.com" });
 
-// Query with complex key expressions and custom indexes
+// Range key accepts expression objects
+await users.queryOne({
+  pk: ["user", "123"],
+  sk: { beginsWith: "user@" },
+});
+
+// Query a GSI — TypeScript constrains the key shape to that index
 await posts.query({
-  index: "type-sk",
+  index: "type_sk",
+  // Now type must be specified
   type: "comment",
   sk: { beginsWith: "user#123#" },
 });
 ```
 
-Query options match DynamoDB’s `QueryCommandInput` (minus the expression fields that Turbine builds for you), so you can set things like `Limit`, `ExclusiveStartKey`, `ScanIndexForward`, `ConsistentRead`, etc.
+Query options match DynamoDB's `QueryCommandInput` (minus the expression fields that Turbine builds for you), so you can set things like `Limit`, `ExclusiveStartKey`, `ScanIndexForward`, `ConsistentRead`, etc.
+
+### Condition Expressions
+
+`put`, `update`, and `delete` accept an optional `conditions` map. Each key is a schema field name (dot-notation supported for nested fields) and the value is a `FilterExpression`. The condition must be satisfied for the write to proceed; otherwise DynamoDB throws a `ConditionalCheckFailedException`.
+
+```ts
+// Only insert if no item with this pk exists yet
+await users.put(
+  { id: "00000000-0000-0000-0000-000000000002", email: "new@example.com" },
+  { conditions: { pk: { notExists: true } } },
+);
+
+// Only update if the item already exists
+await users.update(
+  { pk: ["user", user.id], sk: user.email },
+  { name: "Randy Newman" },
+  { conditions: { email: { exists: true } } },
+);
+
+// Only delete if a specific value matches
+await users.delete(
+  { pk: ["user", user.id], sk: user.email },
+  { conditions: { name: "Randy Newman" } },
+);
+
+// Nested field condition using dot-notation
+await users.update(
+  { pk: ["user", user.id], sk: user.email },
+  { name: "Randy Newman" },
+  { conditions: { "address.country": "US" } },
+);
+```
+
+Available condition expressions:
+
+| Expression | Meaning |
+|---|---|
+| `{ exists: true }` | Attribute must exist |
+| `{ notExists: true }` | Attribute must not exist |
+| `{ equals: value }` | Attribute equals value |
+| `{ beginsWith: prefix }` | String attribute begins with prefix |
+| `{ between: [lo, hi] }` | Attribute is between two values (inclusive) |
+| `value` (primitive) | Shorthand for `{ equals: value }` |
 
 ## Types and validation
 

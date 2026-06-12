@@ -79,10 +79,20 @@ export const generateFilterExpression = <
   const filterExpressions = (
     Object.entries(filters) as [string, FilterExpression][]
   ).map(([attr, expression]) => {
-    const attributeName = `#${prefix}_${attr.toString()}`;
-    const attributeValue = `:${prefix}_${attr.toString()}`;
+    // Split dot-notation paths (e.g. "meta.category") into segments
+    // Each part gets its own ExpressionAttributeNames placeholder
+    const segments: string[] = attr.toString().split(".");
+    const attributeName = segments
+      .map((segment) => `#${prefix}_${segment}`)
+      .join(".");
 
-    ExpressionAttributeNames[attributeName] = attr.toString();
+    for (const segment of segments) {
+      ExpressionAttributeNames[`#${prefix}_${segment}`] = segment;
+    }
+
+    // Dots are also invalid in ExpressionAttributeValues keys
+    // Replace them with underscores (e.g. ":filter_meta_category").
+    const attributeValue = `:${prefix}_${attr.toString().replace(/\./g, "_")}`;
 
     if (typeof expression === "object" && expression !== null) {
       if ("equals" in expression) {

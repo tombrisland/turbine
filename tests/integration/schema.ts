@@ -101,9 +101,25 @@ export const like = defineEntity({
   },
 });
 
+export const product = defineEntity({
+  table,
+  schema: z.object({
+    id: z.string(),
+    name: z.string(),
+    meta: z.object({ category: z.string(), active: z.boolean() }),
+    createdAt: z.iso.datetime().default(() => new Date().toISOString()),
+  }),
+  keys: {
+    type: () => "product",
+    pk: (p) => ["product", p.id],
+    sk: (p) => p.id,
+  },
+});
+
 export type Entities = {
   user: typeof user;
   post: typeof post;
   comment: typeof comment;
   like: typeof like;
+  product: typeof product;
 };

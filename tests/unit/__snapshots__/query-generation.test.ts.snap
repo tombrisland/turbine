@@ -240,14 +240,15 @@ exports[`query-generation > query multiple filters 1`] = `
 exports[`query-generation > query nested filter equals 1`] = `
 {
   "ExpressionAttributeNames": {
-    "#filter_object.nested1": "object.nested1",
+    "#filter_nested1": "nested1",
+    "#filter_object": "object",
     "#key_pk": "pk",
   },
   "ExpressionAttributeValues": {
-    ":filter_object.nested1": "nested2",
+    ":filter_object_nested1": "nested2",
     ":key_pk": "post#123",
   },
-  "FilterExpression": "#filter_object.nested1 = :filter_object.nested1",
+  "FilterExpression": "#filter_object.#filter_nested1 = :filter_object_nested1",
   "IndexName": undefined,
   "KeyConditionExpression": "#key_pk = :key_pk",
   "TableName": "test-table",

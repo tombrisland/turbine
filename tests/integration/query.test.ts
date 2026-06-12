@@ -1,7 +1,7 @@
 import { v4 as uuid } from "uuid";
 import { describe, it, expect } from "vitest";
 
-import { comment, post, user } from "./schema";
+import { comment, post, product, user } from "./schema";
 
 describe("integration: queries and pagination", () => {
   it("queries global feed via gsi1 and paginates", async () => {
@@ -92,5 +92,28 @@ describe("integration: queries and pagination", () => {
         index: "gsi1",
       }),
     ).rejects.toThrow("Query key condition not supported");
+  });
+
+  it("filters query results on a nested attribute using dot-notation", async () => {
+    const run = uuid();
+
+    await product.put({
+      id: `${run}-electronics`,
+      name: "Laptop",
+      meta: { category: "electronics", active: true },
+    });
+    await product.put({
+      id: `${run}-clothing`,
+      name: "T-Shirt",
+      meta: { category: "clothing", active: true },
+    });
+
+    const results = await product.queryAll(
+      { pk: ["product", `${run}-electronics`] },
+      { filters: { "meta.category": "electronics" } },
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0].meta.category).toBe("electronics");
   });
 });
