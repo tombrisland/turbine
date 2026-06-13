@@ -14,7 +14,11 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 
 import { TurbineError } from "./error";
-import type { Table, TableDefinition, TableDefinitionInput, TableIndexDefinition } from "./types/table";
+import type {
+  Table,
+  TableDefinition,
+  TableDefinitionInput,
+} from "./types/table";
 
 // Helper to extract literal hashKey/rangeKey types for each GSI
 type LiteralIndex<T> = T extends { hashKey: infer HK; rangeKey?: infer RK }
@@ -25,10 +29,18 @@ type LiteralIndexes<IX> = { [K in keyof IX]: LiteralIndex<IX[K]> };
 export const defineTable = <
   HK extends string,
   RK extends string = never,
-  const IX extends { [K in keyof IX]: { hashKey: string; rangeKey?: string } } = Record<never, never>,
+  const IX extends { [K in keyof IX]: { hashKey: string; rangeKey?: string } } =
+    Record<never, never>,
 >(
-  definition: { indexes: { table: { hashKey: HK; rangeKey?: RK } } & IX } & Omit<TableDefinitionInput, "indexes">,
-): Table<TableDefinition<{ hashKey: HK; rangeKey?: RK }, { table: { hashKey: HK; rangeKey?: RK } } & LiteralIndexes<IX>>> => {
+  definition: {
+    indexes: { table: { hashKey: HK; rangeKey?: RK } } & IX;
+  } & Omit<TableDefinitionInput, "indexes">,
+): Table<
+  TableDefinition<
+    { hashKey: HK; rangeKey?: RK },
+    { table: { hashKey: HK; rangeKey?: RK } } & LiteralIndexes<IX>
+  >
+> => {
   let client: DynamoDBDocumentClient;
   if (definition.documentClient) {
     client = definition.documentClient;

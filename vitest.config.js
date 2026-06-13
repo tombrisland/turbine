@@ -1,5 +1,3 @@
-import process from "process";
-
 import { defineConfig } from "vitest/config";
 
 const integrationProject = (env = {}) => ({

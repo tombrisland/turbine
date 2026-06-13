@@ -287,4 +287,63 @@ describe("query-generation", () => {
     );
     expect(input).toMatchSnapshot();
   });
+
+  it("query filter or", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        post.query(
+          { pk: ["post", "123"] },
+          {
+            filters: {
+              or: [{ status: "published" }, { status: "draft" }],
+            },
+          },
+        ),
+      emptyResult,
+    );
+    expect(input).toMatchSnapshot();
+  });
+
+  it("query filter or of and blocks", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        post.query(
+          { pk: ["post", "123"] },
+          {
+            filters: {
+              or: [
+                {
+                  and: [{ status: "published" }, { score: { greaterThan: 5 } }],
+                },
+                { and: [{ status: "draft" }, { score: { lessThan: 2 } }] },
+              ],
+            },
+          },
+        ),
+      emptyResult,
+    );
+    expect(input).toMatchSnapshot();
+  });
+
+  it("query filter and with nested or", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        post.query(
+          { pk: ["post", "123"] },
+          {
+            filters: {
+              and: [
+                { title: { exists: true } },
+                { or: [{ status: "published" }, { status: "draft" }] },
+              ],
+            },
+          },
+        ),
+      emptyResult,
+    );
+    expect(input).toMatchSnapshot();
+  });
 });

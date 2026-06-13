@@ -1,9 +1,9 @@
+import type { UpdateCommandInput } from "@aws-sdk/lib-dynamodb";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import z from "zod";
 
 import { captureDynamoDBCommand } from "./generation-test-utils";
 import { defineEntity, defineTable } from "../../src";
-import type { UpdateCommandInput } from "@aws-sdk/lib-dynamodb";
 
 const table = defineTable({
   name: "test-table",
@@ -111,7 +111,7 @@ describe("update-generation", () => {
 
     expect(input.ExpressionAttributeNames).toHaveProperty("#name");
     expect(input.ExpressionAttributeNames).toHaveProperty("#condition_age");
-    expect(input.ConditionExpression).toBe("#condition_age > :condition_age");
+    expect(input.ConditionExpression).toBe("#condition_age > :condition_0");
     expect(input).toMatchSnapshot();
   });
 
