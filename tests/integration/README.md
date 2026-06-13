@@ -16,7 +16,7 @@ localstack start
 yarn test:integration
 ```
 
-The test setup automatically creates the table and all GSIs on first run. Configuration is loaded from `tests/integration/localstack-env.sh` (endpoint, region, dummy credentials) via `source`.
+The test setup automatically creates the table and all GSIs on first run.
 
 ## Running against real AWS
 

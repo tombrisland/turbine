@@ -12,12 +12,12 @@ exports[`delete-generation > delete by primary key 1`] = `
 
 exports[`delete-generation > delete with equals condition 1`] = `
 {
-  "ConditionExpression": "#condition_email = :condition_email",
+  "ConditionExpression": "#condition_email = :condition_0",
   "ExpressionAttributeNames": {
     "#condition_email": "email",
   },
   "ExpressionAttributeValues": {
-    ":condition_email": "user@example.com",
+    ":condition_0": "user@example.com",
   },
   "Key": {
     "pk": "user#123",

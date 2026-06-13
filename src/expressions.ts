@@ -63,113 +63,167 @@ export const generateQueryExpression = <
   };
 };
 
+type FilterResult = {
+  FilterExpression?: string;
+  ExpressionAttributeNames?: Record<string, string>;
+  ExpressionAttributeValues?: Record<string, unknown>;
+};
+
+// Builds the expression for a single field condition, mutating the shared
+// names/values accumulators. The counter ensures unique value keys across
+// recursive calls.
+const buildFieldExpression = (
+  attr: string,
+  expression: FilterExpression,
+  prefix: string,
+  names: Record<string, string>,
+  values: Record<string, unknown>,
+  counter: { n: number },
+): string => {
+  const id = counter.n++;
+
+  // Split dot-notation paths (e.g. "meta.category") into segments so each
+  // part gets its own ExpressionAttributeNames placeholder. DynamoDB does not
+  // allow dots in placeholder keys, so "#filter_meta.category" is invalid —
+  // the correct form is "#filter_meta.#filter_category".
+  const segments = attr.split(".");
+  const attributeName = segments.map((s) => `#${prefix}_${s}`).join(".");
+  for (const s of segments) names[`#${prefix}_${s}`] = s;
+
+  // Dots are also invalid in ExpressionAttributeValues keys, so use the
+  // counter-based suffix to produce unique keys like ":filter_0", ":filter_1".
+  const v = `:${prefix}_${id}`;
+
+  if (typeof expression === "object" && expression !== null) {
+    if ("equals" in expression) {
+      values[v] = buildValue(expression.equals);
+      return `${attributeName} = ${v}`;
+    }
+    if ("notEquals" in expression) {
+      values[v] = buildValue(expression.notEquals);
+      return `${attributeName} <> ${v}`;
+    }
+    if ("greaterThan" in expression) {
+      values[v] = buildValue(expression.greaterThan);
+      return `${attributeName} > ${v}`;
+    }
+    if ("lessThan" in expression) {
+      values[v] = buildValue(expression.lessThan);
+      return `${attributeName} < ${v}`;
+    }
+    if ("greaterThanOrEquals" in expression) {
+      values[v] = buildValue(expression.greaterThanOrEquals);
+      return `${attributeName} >= ${v}`;
+    }
+    if ("lessThanOrEquals" in expression) {
+      values[v] = buildValue(expression.lessThanOrEquals);
+      return `${attributeName} <= ${v}`;
+    }
+    if ("between" in expression) {
+      const [start, end] = expression.between;
+      values[`${v}a`] = buildValue(start);
+      values[`${v}b`] = buildValue(end);
+      return `${attributeName} BETWEEN ${v}a AND ${v}b`;
+    }
+    if ("contains" in expression) {
+      values[v] = buildValue(expression.contains);
+      return `contains(${attributeName}, ${v})`;
+    }
+    if ("notContains" in expression) {
+      values[v] = buildValue(expression.notContains);
+      return `not contains(${attributeName}, ${v})`;
+    }
+    if ("beginsWith" in expression) {
+      values[v] = buildValue(expression.beginsWith);
+      return `begins_with(${attributeName}, ${v})`;
+    }
+    if ("exists" in expression) {
+      return `attribute_exists(${attributeName})`;
+    }
+    if ("notExists" in expression) {
+      return `attribute_not_exists(${attributeName})`;
+    }
+  }
+
+  // Default: primitive shorthand for equals
+  values[v] = buildValue(expression);
+  return `${attributeName} = ${v}`;
+};
+
+// Internal concrete type used by the recursive builder, independent of entity generics.
+type FieldMap = Record<string, FilterExpression>;
+type OrNode = { or: FilterNode[] };
+type AndNode = { and: FilterNode[] };
+type FilterNode = OrNode | AndNode | FieldMap;
+
+const isOrNode = (f: FilterNode): f is OrNode =>
+  "or" in f && Array.isArray(f.or);
+const isAndNode = (f: FilterNode): f is AndNode =>
+  "and" in f && Array.isArray(f.and);
+
+// Recursively builds a DynamoDB filter expression from a FilterGroup tree.
+const buildGroupExpression = (
+  filters: FilterNode,
+  prefix: string,
+  names: Record<string, string>,
+  values: Record<string, unknown>,
+  counter: { n: number },
+): string => {
+  // { or: [...] } node
+  if (isOrNode(filters)) {
+    const parts = filters.or
+      .map((child) =>
+        buildGroupExpression(child, prefix, names, values, counter),
+      )
+      .filter(Boolean);
+    if (parts.length === 0) return "";
+    return parts.length === 1 ? parts[0]! : `(${parts.join(" OR ")})`;
+  }
+
+  // { and: [...] } node
+  if (isAndNode(filters)) {
+    const parts = filters.and
+      .map((child) =>
+        buildGroupExpression(child, prefix, names, values, counter),
+      )
+      .filter(Boolean);
+    if (parts.length === 0) return "";
+    return parts.length === 1 ? parts[0]! : `(${parts.join(" AND ")})`;
+  }
+
+  // Flat field map — AND-join all entries
+  const entries = Object.entries(filters) as [string, FilterExpression][];
+  if (entries.length === 0) return "";
+  const parts = entries.map(([attr, expression]) =>
+    buildFieldExpression(attr, expression, prefix, names, values, counter),
+  );
+  return parts.length === 1 ? parts[0]! : parts.join(" AND ");
+};
+
 export const generateFilterExpression = <
   D extends EntityDefinition<z.ZodObject>,
 >(
   filters?: Filters<D>,
   prefix = "filter",
-) => {
-  if (!filters || Object.keys(filters).length === 0) {
-    return {};
-  }
+): FilterResult => {
+  if (!filters || Object.keys(filters).length === 0) return {};
 
   const ExpressionAttributeNames: Record<string, string> = {};
   const ExpressionAttributeValues: Record<string, unknown> = {};
+  const counter = { n: 0 };
 
-  const filterExpressions = (
-    Object.entries(filters) as [string, FilterExpression][]
-  ).map(([attr, expression]) => {
-    // Split dot-notation paths (e.g. "meta.category") into segments
-    // Each part gets its own ExpressionAttributeNames placeholder
-    const segments: string[] = attr.toString().split(".");
-    const attributeName = segments
-      .map((segment) => `#${prefix}_${segment}`)
-      .join(".");
+  const expr = buildGroupExpression(
+    filters as FilterNode,
+    prefix,
+    ExpressionAttributeNames,
+    ExpressionAttributeValues,
+    counter,
+  );
 
-    for (const segment of segments) {
-      ExpressionAttributeNames[`#${prefix}_${segment}`] = segment;
-    }
-
-    // Dots are also invalid in ExpressionAttributeValues keys
-    // Replace them with underscores (e.g. ":filter_meta_category").
-    const attributeValue = `:${prefix}_${attr.toString().replace(/\./g, "_")}`;
-
-    if (typeof expression === "object" && expression !== null) {
-      if ("equals" in expression) {
-        ExpressionAttributeValues[attributeValue] = buildValue(
-          expression.equals,
-        );
-        return `${attributeName} = ${attributeValue}`;
-      }
-      if ("notEquals" in expression) {
-        ExpressionAttributeValues[attributeValue] = buildValue(
-          expression.notEquals,
-        );
-        return `${attributeName} <> ${attributeValue}`;
-      }
-      if ("greaterThan" in expression) {
-        ExpressionAttributeValues[attributeValue] = buildValue(
-          expression.greaterThan,
-        );
-        return `${attributeName} > ${attributeValue}`;
-      }
-      if ("lessThan" in expression) {
-        ExpressionAttributeValues[attributeValue] = buildValue(
-          expression.lessThan,
-        );
-        return `${attributeName} < ${attributeValue}`;
-      }
-      if ("greaterThanOrEquals" in expression) {
-        ExpressionAttributeValues[attributeValue] = buildValue(
-          expression.greaterThanOrEquals,
-        );
-        return `${attributeName} >= ${attributeValue}`;
-      }
-      if ("lessThanOrEquals" in expression) {
-        ExpressionAttributeValues[attributeValue] = buildValue(
-          expression.lessThanOrEquals,
-        );
-        return `${attributeName} <= ${attributeValue}`;
-      }
-      if ("between" in expression) {
-        const [start, end] = expression.between;
-        ExpressionAttributeValues[attributeValue + "1"] = buildValue(start);
-        ExpressionAttributeValues[attributeValue + "2"] = buildValue(end);
-        return `${attributeName} BETWEEN ${attributeValue + "1"} AND ${attributeValue + "2"}`;
-      }
-      if ("contains" in expression) {
-        ExpressionAttributeValues[attributeValue] = buildValue(
-          expression.contains,
-        );
-        return `contains(${attributeName}, ${attributeValue})`;
-      }
-      if ("notContains" in expression) {
-        ExpressionAttributeValues[attributeValue] = buildValue(
-          expression.notContains,
-        );
-        return `not contains(${attributeName}, ${attributeValue})`;
-      }
-      if ("beginsWith" in expression) {
-        ExpressionAttributeValues[attributeValue] = buildValue(
-          expression.beginsWith,
-        );
-        return `begins_with(${attributeName}, ${attributeValue})`;
-      }
-      if ("exists" in expression) {
-        return `attribute_exists(${attributeName})`;
-      }
-      if ("notExists" in expression) {
-        return `attribute_not_exists(${attributeName})`;
-      }
-    }
-
-    // Default: equals
-    ExpressionAttributeValues[attributeValue] = buildValue(expression);
-    return `${attributeName} = ${attributeValue}`;
-  });
+  if (!expr) return {};
 
   return {
-    FilterExpression: filterExpressions.join(" AND "),
+    FilterExpression: expr,
     ExpressionAttributeNames,
     ExpressionAttributeValues,
   };

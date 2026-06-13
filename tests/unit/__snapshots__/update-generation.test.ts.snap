@@ -22,14 +22,14 @@ exports[`update-generation > update a single field 1`] = `
 
 exports[`update-generation > update merges condition and update ExpressionAttributeNames 1`] = `
 {
-  "ConditionExpression": "#condition_age > :condition_age",
+  "ConditionExpression": "#condition_age > :condition_0",
   "ExpressionAttributeNames": {
     "#condition_age": "age",
     "#createdAt": "createdAt",
     "#name": "name",
   },
   "ExpressionAttributeValues": {
-    ":condition_age": 18,
+    ":condition_0": 18,
     ":createdAt": "2012-02-18T00:00:00.000Z",
     ":name": "Alice",
   },

@@ -29,7 +29,10 @@ export type TableDefinitionInput = {
 
 export type TableDefinition<
   TI extends TableIndexDefinition = TableIndexDefinition,
-  IX extends Record<string, TableIndexDefinition> = Record<string, TableIndexDefinition>,
+  IX extends Record<string, TableIndexDefinition> = Record<
+    string,
+    TableIndexDefinition
+  >,
 > = {
   documentClient?: DynamoDBDocumentClient;
   name: string;

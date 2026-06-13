@@ -75,13 +75,19 @@ export type NestedPaths<
         : `${Prefix}${K}`;
     }[keyof T & string];
 
-export type Filters<D extends EntityDefinition<z.ZodObject>> = {
+export type FieldConditions<D extends EntityDefinition<z.ZodObject>> = {
   [K in NestedPaths<z.infer<D["schema"]>>]?: FilterExpression;
 };
 
-export type Conditions<D extends EntityDefinition<z.ZodObject>> = {
-  [K in NestedPaths<z.infer<D["schema"]>>]?: FilterExpression;
-};
+export type FilterGroup<D extends EntityDefinition<z.ZodObject>> =
+  | FieldConditions<D>
+  | { and: FilterGroup<D>[] }
+  | { or: FilterGroup<D>[] };
+
+export type Filters<D extends EntityDefinition<z.ZodObject>> = FilterGroup<D>;
+
+export type Conditions<D extends EntityDefinition<z.ZodObject>> =
+  FilterGroup<D>;
 
 export type QueryOptions<D extends EntityDefinition<z.ZodObject>> = Omit<
   QueryCommandInput,

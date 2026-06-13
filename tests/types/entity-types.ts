@@ -76,3 +76,26 @@ books.query(
     },
   },
 );
+
+// OR filter group
+books.query(
+  { isbn: "isbn1" },
+  {
+    filters: {
+      or: [{ description: { beginsWith: "desc1" } }, { genre: "fiction" }],
+    },
+  },
+);
+
+// OR of AND blocks
+books.query(
+  { isbn: "isbn1" },
+  {
+    filters: {
+      or: [
+        { and: [{ description: { exists: true } }, { genre: "fiction" }] },
+        { and: [{ genre: "non-fiction" }, { "metadata.author": "someone" }] },
+      ],
+    },
+  },
+);

@@ -261,6 +261,29 @@ describe("query-generation", () => {
     expect(input).toMatchSnapshot();
   });
 
+  it("query filter empty", async () => {
+    const input = await captureDynamoDBCommand<{ FilterExpression?: string }>(
+      table,
+      () =>
+        post.query(
+          { pk: ["post", "123"] },
+          {
+            filters: {
+              and: [
+                {
+                  or: [],
+                },
+              ],
+            },
+          },
+        ),
+      emptyResult,
+    );
+
+    // An empty group should yield no filter at all.
+    expect(input.FilterExpression).toBeUndefined();
+  });
+
   it("query filter with GSI", async () => {
     const input = await captureDynamoDBCommand(
       table,
@@ -282,6 +305,65 @@ describe("query-generation", () => {
         post.query(
           { pk: ["post", "123"] },
           { Limit: 10, ScanIndexForward: false },
+        ),
+      emptyResult,
+    );
+    expect(input).toMatchSnapshot();
+  });
+
+  it("query filter or", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        post.query(
+          { pk: ["post", "123"] },
+          {
+            filters: {
+              or: [{ status: "published" }, { status: "draft" }],
+            },
+          },
+        ),
+      emptyResult,
+    );
+    expect(input).toMatchSnapshot();
+  });
+
+  it("query filter or of and blocks", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        post.query(
+          { pk: ["post", "123"] },
+          {
+            filters: {
+              or: [
+                {
+                  and: [{ status: "published" }, { score: { greaterThan: 5 } }],
+                },
+                { and: [{ status: "draft" }, { score: { lessThan: 2 } }] },
+              ],
+            },
+          },
+        ),
+      emptyResult,
+    );
+    expect(input).toMatchSnapshot();
+  });
+
+  it("query filter and with nested or", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        post.query(
+          { pk: ["post", "123"] },
+          {
+            filters: {
+              and: [
+                { title: { exists: true } },
+                { or: [{ status: "published" }, { status: "draft" }] },
+              ],
+            },
+          },
         ),
       emptyResult,
     );

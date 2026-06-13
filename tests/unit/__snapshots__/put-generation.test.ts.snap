@@ -63,13 +63,13 @@ exports[`put-generation > put with condition expression 1`] = `
 
 exports[`put-generation > put with multiple conditions 1`] = `
 {
-  "ConditionExpression": "attribute_not_exists(#condition_email) AND #condition_role = :condition_role",
+  "ConditionExpression": "attribute_not_exists(#condition_email) AND #condition_role = :condition_1",
   "ExpressionAttributeNames": {
     "#condition_email": "email",
     "#condition_role": "role",
   },
   "ExpressionAttributeValues": {
-    ":condition_role": "user",
+    ":condition_1": "user",
   },
   "Item": {
     "email": "user@example.com",

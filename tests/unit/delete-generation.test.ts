@@ -69,11 +69,9 @@ describe("delete-generation", () => {
       ),
     );
 
-    expect(input.ConditionExpression).toBe(
-      "#condition_email = :condition_email",
-    );
+    expect(input.ConditionExpression).toBe("#condition_email = :condition_0");
     expect(input.ExpressionAttributeValues).toMatchObject({
-      ":condition_email": "user@example.com",
+      ":condition_0": "user@example.com",
     });
     expect(input).toMatchSnapshot();
   });

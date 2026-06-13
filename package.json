@@ -2,7 +2,7 @@
   "name": "dynamodb-turbine",
   "version": "0.0.1",
   "description": "Entity mapping and query library for DynamoDB",
-  "main": "dist/index.js",
+  "main": "dist/index.ts",
   "packageManager": "yarn@1.22.22",
   "files": [
     "dist"
@@ -11,7 +11,7 @@
     "build": "tsc",
     "lint": "eslint .",
     "test": "yarn test:types && yarn test:unit",
-    "test:types": "yarn tsc --noEmit tests/type-checking.ts --esModuleInterop",
+    "test:types": "yarn tsc --noEmit tests/types/* --esModuleInterop",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration-localstack",
     "prepare": "yarn build",
