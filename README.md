@@ -226,6 +226,39 @@ Available condition expressions:
 | `{ between: [lo, hi] }` | Attribute is between two values (inclusive) |
 | `value` (primitive) | Shorthand for `{ equals: value }` |
 
+### Update Expressions
+
+The `update` patch accepts expression objects alongside plain values to leverage DynamoDB's atomic update operations:
+
+```ts
+await users.update(
+  { pk: ["user", user.id], sk: user.email },
+  {
+    name: "Alice",                    // plain SET
+    loginCount: { increment: 1 },     // SET #x = #x + :x
+    credits: { decrement: 5 },        // SET #x = #x - :x
+    tags: { append: ["new"] },        // SET #x = list_append(#x, :x)
+    history: { prepend: ["latest"] }, // SET #x = list_append(:x, #x)
+    bio: { ifNotExists: "default" },  // SET #x = if_not_exists(#x, :x)
+    roles: { addToSet: ["admin"] },   // ADD #x :x
+    oldRoles: { deleteFromSet: ["guest"] }, // DELETE #x :x
+    temp: { remove: true },           // REMOVE #x
+  },
+);
+```
+
+| Expression | DynamoDB action |
+|---|---|
+| `{ increment: n }` | `SET #x = #x + :x` |
+| `{ decrement: n }` | `SET #x = #x - :x` |
+| `{ append: list }` | `SET #x = list_append(#x, :x)` |
+| `{ prepend: list }` | `SET #x = list_append(:x, #x)` |
+| `{ ifNotExists: value }` | `SET #x = if_not_exists(#x, :x)` |
+| `{ addToSet: value }` | `ADD #x :x` |
+| `{ deleteFromSet: value }` | `DELETE #x :x` |
+| `{ remove: true }` | `REMOVE #x` |
+| `null` | `REMOVE #x` |
+
 ## Types and validation
 
 - Inputs are validated by your Zod schema (defaults apply too).

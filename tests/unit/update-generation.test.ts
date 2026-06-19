@@ -109,7 +109,7 @@ describe("update-generation", () => {
       { Attributes: defaultUser },
     );
 
-    expect(input.ExpressionAttributeNames).toHaveProperty("#name");
+    expect(input.ExpressionAttributeNames).toHaveProperty("#update_name");
     expect(input.ExpressionAttributeNames).toHaveProperty("#condition_age");
     expect(input.ConditionExpression).toBe("#condition_age > :condition_0");
     expect(input).toMatchSnapshot();
@@ -136,6 +136,76 @@ describe("update-generation", () => {
         user.update(
           { pk: ["user", "abc-def"], sk: "test@example.com" },
           { name: "Charlie" },
+        ),
+      { Attributes: defaultUser },
+    );
+
+    expect(input).toMatchSnapshot();
+  });
+
+  it("update with increment expression", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        user.update(
+          { pk: ["user", "123"], sk: "user@example.com" },
+          { age: { increment: 1 } },
+        ),
+      { Attributes: defaultUser },
+    );
+
+    expect(input).toMatchSnapshot();
+  });
+
+  it("update with decrement expression", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        user.update(
+          { pk: ["user", "123"], sk: "user@example.com" },
+          { age: { decrement: 5 } },
+        ),
+      { Attributes: defaultUser },
+    );
+
+    expect(input).toMatchSnapshot();
+  });
+
+  it("update with ifNotExists expression", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        user.update(
+          { pk: ["user", "123"], sk: "user@example.com" },
+          { bio: { ifNotExists: "default bio" } },
+        ),
+      { Attributes: defaultUser },
+    );
+
+    expect(input).toMatchSnapshot();
+  });
+
+  it("update with remove expression", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        user.update(
+          { pk: ["user", "123"], sk: "user@example.com" },
+          { bio: { remove: true } },
+        ),
+      { Attributes: defaultUser },
+    );
+
+    expect(input).toMatchSnapshot();
+  });
+
+  it("update with mixed plain values and expressions", async () => {
+    const input = await captureDynamoDBCommand(
+      table,
+      () =>
+        user.update(
+          { pk: ["user", "123"], sk: "user@example.com" },
+          { name: "Alice", age: { increment: 1 } },
         ),
       { Attributes: defaultUser },
     );

@@ -5,6 +5,7 @@ import {
   generateConditionExpression,
   generateQueryExpression,
   generateUpdateExpression,
+  isUpdateExpression,
 } from "./expressions";
 import {
   expandPayload,
@@ -42,7 +43,24 @@ export const defineEntity = <
 
   entity.update = async (key, patch, options) => {
     const [, Key] = resolveIndex(definition, { ...key, index: "table" });
-    const payload = await expandPartialPayload(definition, patch);
+
+    // Separate update expression objects from plain values
+    const plainPatch: Record<string, unknown> = {};
+    const exprPatch: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(patch as Record<string, unknown>)) {
+      if (isUpdateExpression(v)) {
+        exprPatch[k] = v;
+      } else {
+        plainPatch[k] = v;
+      }
+    }
+
+    const payload = {
+      ...(Object.keys(plainPatch).length
+        ? await expandPartialPayload(definition, plainPatch as any)
+        : {}),
+      ...exprPatch,
+    };
 
     for (const field of Object.keys(Key)) {
       if (field in payload) {
@@ -61,10 +79,15 @@ export const defineEntity = <
         ...update.ExpressionAttributeNames,
         ...condition.ExpressionAttributeNames,
       },
-      ExpressionAttributeValues: {
+      ...(Object.keys({
         ...update.ExpressionAttributeValues,
         ...condition.ExpressionAttributeValues,
-      },
+      }).length && {
+        ExpressionAttributeValues: {
+          ...update.ExpressionAttributeValues,
+          ...condition.ExpressionAttributeValues,
+        },
+      }),
       ReturnValues: ReturnValue.ALL_NEW,
     });
 

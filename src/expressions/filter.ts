@@ -1,67 +1,11 @@
 import { z } from "zod";
 
+import { buildValue, resolvePath } from "./shared";
 import type {
   EntityDefinition,
   FilterExpression,
   Filters,
-} from "./types/entity";
-
-export const generateAttributeValues = (
-  patch: Record<string, unknown>,
-  prefix?: string,
-) => {
-  return Object.entries(patch)
-    .filter(([, value]) => value !== undefined && value !== null)
-    .reduce(
-      (patch, [key, value]) => ({
-        ...patch,
-        [`:${prefix || ""}${key}`]: value,
-      }),
-      {},
-    );
-};
-
-export const generateAttributeNames = (
-  patch: Record<string, unknown>,
-  prefix?: string,
-) => {
-  return Object.entries(patch)
-    .filter(([, value]) => value !== undefined)
-    .reduce(
-      (patch, [key]) => ({ ...patch, [`#${prefix || ""}${key}`]: key }),
-      {},
-    );
-};
-
-export const buildValue = (value: any) => {
-  if (Array.isArray(value)) {
-    value = value.join("#");
-  }
-  return value;
-};
-
-export const generateQueryExpression = <
-  D extends EntityDefinition<z.ZodObject>,
->(
-  key: Record<string, unknown>,
-  filters?: Filters<D>,
-) => {
-  const keyCondition = generateFilterExpression(key as Filters<D>, "key");
-  const filter = generateFilterExpression(filters);
-
-  return {
-    KeyConditionExpression: keyCondition.FilterExpression,
-    FilterExpression: filter.FilterExpression,
-    ExpressionAttributeNames: {
-      ...keyCondition.ExpressionAttributeNames,
-      ...filter.ExpressionAttributeNames,
-    },
-    ExpressionAttributeValues: {
-      ...keyCondition.ExpressionAttributeValues,
-      ...filter.ExpressionAttributeValues,
-    },
-  };
-};
+} from "../types/entity";
 
 type FilterResult = {
   FilterExpression?: string;
@@ -75,20 +19,13 @@ type FilterResult = {
 const buildFieldExpression = (
   attr: string,
   expression: FilterExpression,
-  prefix: string,
+  prefix: "filter" | "condition" | "key",
   names: Record<string, string>,
   values: Record<string, unknown>,
   counter: { n: number },
 ): string => {
   const id = counter.n++;
-
-  // Split dot-notation paths (e.g. "meta.category") into segments so each
-  // part gets its own ExpressionAttributeNames placeholder. DynamoDB does not
-  // allow dots in placeholder keys, so "#filter_meta.category" is invalid —
-  // the correct form is "#filter_meta.#filter_category".
-  const segments = attr.split(".");
-  const attributeName = segments.map((s) => `#${prefix}_${s}`).join(".");
-  for (const s of segments) names[`#${prefix}_${s}`] = s;
+  const attributeName = resolvePath(attr, prefix, names);
 
   // Dots are also invalid in ExpressionAttributeValues keys, so use the
   // counter-based suffix to produce unique keys like ":filter_0", ":filter_1".
@@ -164,12 +101,11 @@ const isAndNode = (f: FilterNode): f is AndNode =>
 // Recursively builds a DynamoDB filter expression from a FilterGroup tree.
 const buildGroupExpression = (
   filters: FilterNode,
-  prefix: string,
+  prefix: "filter" | "condition" | "key",
   names: Record<string, string>,
   values: Record<string, unknown>,
   counter: { n: number },
 ): string => {
-  // { or: [...] } node
   if (isOrNode(filters)) {
     const parts = filters.or
       .map((child) =>
@@ -180,7 +116,6 @@ const buildGroupExpression = (
     return parts.length === 1 ? parts[0]! : `(${parts.join(" OR ")})`;
   }
 
-  // { and: [...] } node
   if (isAndNode(filters)) {
     const parts = filters.and
       .map((child) =>
@@ -191,7 +126,6 @@ const buildGroupExpression = (
     return parts.length === 1 ? parts[0]! : `(${parts.join(" AND ")})`;
   }
 
-  // Flat field map — AND-join all entries
   const entries = Object.entries(filters) as [string, FilterExpression][];
   if (entries.length === 0) return "";
   const parts = entries.map(([attr, expression]) =>
@@ -204,7 +138,7 @@ export const generateFilterExpression = <
   D extends EntityDefinition<z.ZodObject>,
 >(
   filters?: Filters<D>,
-  prefix = "filter",
+  prefix: "filter" | "condition" | "key" = "filter",
 ): FilterResult => {
   if (!filters || Object.keys(filters).length === 0) return {};
 
@@ -229,47 +163,25 @@ export const generateFilterExpression = <
   };
 };
 
-export const generateConditionExpression = <
+export const generateQueryExpression = <
   D extends EntityDefinition<z.ZodObject>,
 >(
-  conditions?: Filters<D>,
+  key: Record<string, unknown>,
+  filters?: Filters<D>,
 ) => {
-  const result = generateFilterExpression(conditions, "condition");
-  if (!result.FilterExpression) return {};
+  const keyCondition = generateFilterExpression(key as Filters<D>, "key");
+  const filter = generateFilterExpression(filters);
 
   return {
-    ConditionExpression: result.FilterExpression,
-    ExpressionAttributeNames: result.ExpressionAttributeNames,
-    ExpressionAttributeValues: result.ExpressionAttributeValues,
-  };
-};
-
-export const generateUpdateExpression = (
-  patch: Record<string, unknown>,
-  doNotOverwrite: string[] = [],
-) => {
-  const setExpression = Object.entries(patch)
-    .filter(([, value]) => value !== undefined && value !== null)
-    .map(([key]) => {
-      let value = `:${key}`;
-      if (doNotOverwrite.includes(key)) {
-        value = `if_not_exists(#${key}, ${value})`;
-      }
-      return `#${key} = ${value}`;
-    });
-
-  const removeExpression = Object.entries(patch)
-    .filter(([, value]) => value === null)
-    .map(([key]) => `#${key}`);
-
-  const expressionComponents = [
-    setExpression.length && `SET ${setExpression.join(", ")}`,
-    removeExpression.length && `REMOVE ${removeExpression.join(", ")}`,
-  ];
-
-  return {
-    UpdateExpression: expressionComponents.filter(Boolean).join(" "),
-    ExpressionAttributeNames: generateAttributeNames(patch),
-    ExpressionAttributeValues: generateAttributeValues(patch),
+    KeyConditionExpression: keyCondition.FilterExpression,
+    FilterExpression: filter.FilterExpression,
+    ExpressionAttributeNames: {
+      ...keyCondition.ExpressionAttributeNames,
+      ...filter.ExpressionAttributeNames,
+    },
+    ExpressionAttributeValues: {
+      ...keyCondition.ExpressionAttributeValues,
+      ...filter.ExpressionAttributeValues,
+    },
   };
 };

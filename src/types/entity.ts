@@ -64,6 +64,16 @@ export type FilterExpression =
   | { notExists: true }
   | KeyConditionPrimitiveValue;
 
+export type UpdateFieldExpression =
+  | { increment: number }
+  | { decrement: number }
+  | { append: any[] }
+  | { prepend: any[] }
+  | { ifNotExists: any }
+  | { addToSet: any }
+  | { deleteFromSet: any }
+  | { remove: true };
+
 type DepthLimit = [never, 0, 1, 2, 3];
 export type NestedPaths<
   T,
@@ -72,11 +82,15 @@ export type NestedPaths<
 > = Depth extends 0
   ? never
   : {
-      [K in keyof T & string]: T[K] extends any[]
+      [K in keyof T & string]: NonNullable<T[K]> extends any[]
         ? `${Prefix}${K}`
-        : T[K] extends object
+        : NonNullable<T[K]> extends object
           ?
-              | NestedPaths<T[K], DepthLimit[Depth], `${Prefix}${K}.`>
+              | NestedPaths<
+                  NonNullable<T[K]>,
+                  DepthLimit[Depth],
+                  `${Prefix}${K}.`
+                >
               | `${Prefix}${K}`
           : `${Prefix}${K}`;
     }[keyof T & string];
@@ -145,6 +159,15 @@ type ResolveComputedKeys<D extends EntityDefinition> =
 
 type StoredInstance<D extends EntityDefinition> = z.infer<D["schema"]>;
 
+export type UpdatePatch<D extends EntityDefinition> = {
+  [K in keyof z.infer<D["schema"]>]?:
+    | z.infer<D["schema"]>[K]
+    | UpdateFieldExpression
+    | null;
+} & {
+  [K in NestedPaths<z.infer<D["schema"]>>]?: any | UpdateFieldExpression | null;
+};
+
 export type Entity<
   D extends EntityDefinition,
   IX extends Record<string, TableIndexDefinition> = Record<
@@ -176,7 +199,7 @@ export type Entity<
   ): Promise<Instance<Entity<D, IX>>>;
   update(
     key: TableKey<D["table"]["definition"]["tableIndex"]>,
-    patch: Partial<StoredInstance<D>>,
+    patch: UpdatePatch<D>,
     options?: { conditions?: Conditions<D> },
   ): Promise<Instance<Entity<D, IX>>>;
   delete(
@@ -188,5 +211,8 @@ export type Entity<
 export type Instance<
   E extends Entity<EntityDefinition, Record<string, TableIndexDefinition>>,
 > = StoredInstance<E["definition"]> & {
-  update(data: Partial<StoredInstance<E["definition"]>>): Promise<Instance<E>>;
+  update(
+    data: UpdatePatch<E["definition"]>,
+    options?: { conditions?: Conditions<E["definition"]> },
+  ): Promise<Instance<E>>;
 };

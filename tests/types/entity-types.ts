@@ -189,3 +189,35 @@ books.query(
     },
   },
 );
+
+// ─── update expressions ─────────────────────────────────────────────────────
+
+// update with plain value
+books.update({ pk: "book#123", sk: "title" }, { description: "new desc" });
+
+// update with expression object
+books.update(
+  { pk: "book#123", sk: "title" },
+  { description: { ifNotExists: "default" } },
+);
+
+// update with remove
+books.update(
+  { pk: "book#123", sk: "title" },
+  {
+    description: { remove: true },
+    "metadata.author": { remove: true },
+  },
+);
+
+// @ts-expect-error update with invalid
+books.update({ pk: "book#123", sk: "title" }, { nonExistentField: "value" });
+
+// @ts-expect-error update with non-existent field
+books.update({ pk: "book#123", sk: "title" }, { nonExistentField: "value" });
+
+books.update(
+  { pk: "book#123", sk: "title" },
+  // @ts-expect-error update with non-existent expression type
+  { description: { multiply: 2 } },
+);

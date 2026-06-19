@@ -125,10 +125,32 @@ export const product = defineEntity({
   },
 });
 
+export const counter = defineEntity({
+  table,
+  schema: z.object({
+    id: z.string(),
+    count: z.number().default(0),
+    tags: z.array(z.string()).default([]),
+    roles: z.any().optional(),
+    bio: z.string().optional(),
+    stats: z.object({ views: z.number() }).optional(),
+    createdAt: z.iso.datetime().default(() => new Date().toISOString()),
+    type: z.string(),
+    pk: z.string(),
+    sk: z.string(),
+  }),
+  computed: {
+    type: () => "counter",
+    pk: (c) => ["counter", c.id],
+    sk: (c) => c.id,
+  },
+});
+
 export type Entities = {
   user: typeof user;
   post: typeof post;
   comment: typeof comment;
   like: typeof like;
   product: typeof product;
+  counter: typeof counter;
 };
