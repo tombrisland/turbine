@@ -1,24 +1,29 @@
 import type { GetCommandInput, QueryCommandInput } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
 
-import type { KeyDefinition } from "./key";
+import type { ComputedFieldDefinition } from "./computed";
 import type { Table, TableDefinition, TableIndexDefinition } from "./table";
 
+export type ComputedFields<T = any, Keys extends string = string> = {
+  [K in Keys]: ComputedFieldDefinition<T>;
+};
+
 export type EntityDefinition<
-  S extends z.ZodObject,
+  S extends z.ZodObject = z.ZodObject,
   TI extends TableIndexDefinition = TableIndexDefinition,
   IX extends Record<string, TableIndexDefinition> = Record<
     string,
     TableIndexDefinition
   >,
+  D extends Record<string, any> = Record<string, any>,
 > = {
   table: Table<TableDefinition<TI, IX>>;
   schema: S;
-  keys: Record<string, KeyDefinition<z.infer<S>>>;
+  computed?: D;
 };
 
 export type PagedResult<
-  D extends EntityDefinition<z.ZodObject<any>>,
+  D extends EntityDefinition,
   IX extends Record<string, TableIndexDefinition> = Record<
     string,
     TableIndexDefinition
@@ -59,7 +64,6 @@ export type FilterExpression =
   | { notExists: true }
   | KeyConditionPrimitiveValue;
 
-// Produces "a" | "b.c" | "b.d" for { a: string; b: { c: string; d: string } }
 type DepthLimit = [never, 0, 1, 2, 3];
 export type NestedPaths<
   T,
@@ -75,21 +79,20 @@ export type NestedPaths<
         : `${Prefix}${K}`;
     }[keyof T & string];
 
-export type FieldConditions<D extends EntityDefinition<z.ZodObject>> = {
+export type FieldConditions<D extends EntityDefinition> = {
   [K in NestedPaths<z.infer<D["schema"]>>]?: FilterExpression;
 };
 
-export type FilterGroup<D extends EntityDefinition<z.ZodObject>> =
+export type FilterGroup<D extends EntityDefinition> =
   | FieldConditions<D>
   | { and: FilterGroup<D>[] }
   | { or: FilterGroup<D>[] };
 
-export type Filters<D extends EntityDefinition<z.ZodObject>> = FilterGroup<D>;
+export type Filters<D extends EntityDefinition> = FilterGroup<D>;
 
-export type Conditions<D extends EntityDefinition<z.ZodObject>> =
-  FilterGroup<D>;
+export type Conditions<D extends EntityDefinition> = FilterGroup<D>;
 
-export type QueryOptions<D extends EntityDefinition<z.ZodObject>> = Omit<
+export type QueryOptions<D extends EntityDefinition> = Omit<
   QueryCommandInput,
   | "TableName"
   | "IndexName"
@@ -102,7 +105,6 @@ export type QueryOptions<D extends EntityDefinition<z.ZodObject>> = Omit<
 
 export type IndexName = string | "table";
 
-// Build a QueryKey for a single index: { index?: IndexName } & TableKey<TI>
 type QueryKeyForIndex<
   IndexKey extends string,
   TI extends TableIndexDefinition,
@@ -112,7 +114,6 @@ type QueryKeyForIndex<
   [RR in NonNullable<TI["rangeKey"]>]?: RangeKeyConditionExpression;
 };
 
-// Union of QueryKey shapes across all indexes in the table
 export type QueryKey<IX extends Record<string, TableIndexDefinition>> = {
   [K in keyof IX]: QueryKeyForIndex<K & string, IX[K]>;
 }[keyof IX];
@@ -128,8 +129,18 @@ export type TableKey<T extends TableIndexDefinition> =
         [HH in T["hashKey"]]: HashKeyConditionExpression;
       };
 
+// Resolve computed field keys from entity definition
+type ResolveComputedKeys<D extends EntityDefinition> =
+  D extends EntityDefinition<any, any, any, infer Comp>
+    ? string extends keyof Comp
+      ? never
+      : keyof Comp & string
+    : never;
+
+type StoredInstance<D extends EntityDefinition> = z.infer<D["schema"]>;
+
 export type Entity<
-  D extends EntityDefinition<z.ZodObject>,
+  D extends EntityDefinition,
   IX extends Record<string, TableIndexDefinition> = Record<
     string,
     TableIndexDefinition
@@ -150,13 +161,13 @@ export type Entity<
     options?: QueryOptions<D>,
   ): Promise<Instance<Entity<D, IX>>[]>;
   put(
-    data: Partial<z.infer<D["schema"]>> &
-      Omit<z.infer<D["schema"]>, keyof D["keys"]>,
+    data: Partial<z.input<D["schema"]>> &
+      Omit<z.input<D["schema"]>, ResolveComputedKeys<D>>,
     options?: { conditions?: Conditions<D> },
   ): Promise<Instance<Entity<D, IX>>>;
   update(
     key: TableKey<D["table"]["definition"]["tableIndex"]>,
-    patch: Partial<z.infer<D["schema"]>>,
+    patch: Partial<StoredInstance<D>>,
     options?: { conditions?: Conditions<D> },
   ): Promise<Instance<Entity<D, IX>>>;
   delete(
@@ -166,12 +177,7 @@ export type Entity<
 };
 
 export type Instance<
-  E extends Entity<
-    EntityDefinition<z.ZodObject>,
-    Record<string, TableIndexDefinition>
-  >,
-> = z.infer<E["definition"]["schema"]> & {
-  update(
-    data: Partial<z.infer<E["definition"]["schema"]>>,
-  ): Promise<Instance<E>>;
+  E extends Entity<EntityDefinition, Record<string, TableIndexDefinition>>,
+> = StoredInstance<E["definition"]> & {
+  update(data: Partial<StoredInstance<E["definition"]>>): Promise<Instance<E>>;
 };

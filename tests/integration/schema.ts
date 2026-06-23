@@ -18,18 +18,19 @@ export const user = defineEntity({
   table,
   schema: z.object({
     id: z.string(),
-    email: z.string().email(),
+    email: z.email(),
     username: z.string(),
-    createdAt: z
-      .string()
-      .datetime()
-      .default(() => new Date().toISOString()),
+    createdAt: z.iso.datetime().default(() => new Date().toISOString()),
+    type: z.string(),
+    pk: z.string(),
+    sk: z.string(),
+    gsi1pk: z.string(),
+    gsi1sk: z.string(),
   }),
-  keys: {
+  computed: {
     type: () => "user",
     pk: (u) => ["user", u.id],
     sk: (u) => ["user", u.email],
-    // index by username as alt access pattern
     gsi1pk: () => "user#username",
     gsi1sk: (u) => u.username,
   },
@@ -43,16 +44,20 @@ export const post = defineEntity({
     title: z.string(),
     deletedAt: z.iso.datetime().optional(),
     createdAt: z.iso.datetime().default(() => new Date().toISOString()),
+    type: z.string(),
+    pk: z.string(),
+    sk: z.string(),
+    gsi1pk: z.string(),
+    gsi1sk: z.string(),
+    gsi2pk: z.string(),
+    gsi2sk: z.string(),
   }),
-  keys: {
+  computed: {
     type: () => "post",
-    // by user timeline
     pk: (p) => ["user", p.authorId],
     sk: (p) => p.id,
-    // global feed by createdAt
     gsi1pk: () => "post",
     gsi1sk: (p) => [p.createdAt, p.id],
-    // lookup post by id
     gsi2pk: () => "post#id",
     gsi2sk: (p) => p.id,
   },
@@ -65,16 +70,17 @@ export const comment = defineEntity({
     postId: z.string(),
     authorId: z.string(),
     content: z.string(),
-    createdAt: z
-      .string()
-      .datetime()
-      .default(() => new Date().toISOString()),
+    createdAt: z.iso.datetime().default(() => new Date().toISOString()),
+    type: z.string(),
+    pk: z.string(),
+    sk: z.string(),
+    gsi1pk: z.string(),
+    gsi1sk: z.string(),
   }),
-  keys: {
+  computed: {
     type: () => "comment",
     pk: (c) => ["post", c.postId],
     sk: (c) => ["comment", c.createdAt, c.id],
-    // all comments feed
     gsi1pk: () => "comment",
     gsi1sk: (c) => [c.createdAt, c.id],
   },
@@ -85,17 +91,17 @@ export const like = defineEntity({
   schema: z.object({
     userId: z.string(),
     postId: z.string(),
-    createdAt: z
-      .string()
-      .datetime()
-      .default(() => new Date().toISOString()),
+    createdAt: z.iso.datetime().default(() => new Date().toISOString()),
+    type: z.string(),
+    pk: z.string(),
+    sk: z.string(),
+    gsi1pk: z.string(),
+    gsi1sk: z.string(),
   }),
-  keys: {
+  computed: {
     type: () => "like",
-    // likes on a post
     pk: (l) => ["post", l.postId],
     sk: (l) => ["like", l.createdAt, l.userId],
-    // likes by a user
     gsi1pk: (l) => ["user", l.userId],
     gsi1sk: (l) => ["like", l.createdAt, l.postId],
   },
@@ -108,8 +114,11 @@ export const product = defineEntity({
     name: z.string(),
     meta: z.object({ category: z.string(), active: z.boolean() }),
     createdAt: z.iso.datetime().default(() => new Date().toISOString()),
+    type: z.string(),
+    pk: z.string(),
+    sk: z.string(),
   }),
-  keys: {
+  computed: {
     type: () => "product",
     pk: (p) => ["product", p.id],
     sk: (p) => p.id,

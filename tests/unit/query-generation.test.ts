@@ -26,7 +26,7 @@ const post = defineEntity({
       nested1: z.string(),
     }),
   }),
-  keys: {
+  computed: {
     type: () => "post",
     pk: (p) => ["post", p.id],
     sk: (p) => p.id,

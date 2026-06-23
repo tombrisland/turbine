@@ -5,7 +5,7 @@
 Entity mapping and query helpers for DynamoDB using Zod schemas and the AWS SDK v3. Define your table and entities once, then put, get, update, and query with type-safe objects.
 
 - Small, direct, and type-friendly
-- Derive keys and computed fields from your data
+- Derive composite keys, defaults, and computed fields from your data
 - Works with your existing DynamoDB DocumentClient
 
 ## Getting started
@@ -47,8 +47,8 @@ const users = defineEntity({
     createdAt: z.iso.datetime().optional(),
     updatedAt: z.iso.datetime().optional(),
   }),
-  // Compute keys/fields from the input data
-  keys: {
+  // Derive fields from the input data
+  computed: {
     pk: (u) => ["user", u.id], // becomes `user#{id}`
     sk: (u) => u.email,
     createdAt: (u) => u.createdAt || new Date().toISOString(),
@@ -102,8 +102,8 @@ await users.delete(
 ## Defining tables
 
 - You must define at least one index named `table`. This specifies the primary keys for your default index.
-- The `hashKey` and optional `rangeKey` must match the attribute names you’ll store on items (for example `pk`/`sk`).
-- You can add GSIs by name. Use those attribute names in your entity key derivations.
+- The `hashKey` and optional `rangeKey` must match the attribute names you'll store on items (for example `pk`/`sk`).
+- You can add GSIs by name. Use those attribute names in your entity's computed fields.
 
 Optionally pass your own `DynamoDBDocumentClient` via `documentClient` to reuse configuration. By default, a client is created with `convertEmptyValues: true` and `removeUndefinedValues: true`.
 
@@ -122,9 +122,12 @@ const table = defineTable({
 
 ## Defining entities
 
-- `schema` is a Zod object. It drives validation and types.
-- `keys` derives fields that are written to the item (e.g. `pk`, `sk`, `type`, timestamps).
-  - A key value can be a string, a function, or an array of parts; arrays join with `#`.
+- `schema` is a Zod object. It drives validation and types for the input data.
+- `computed` computes fields that are written to the item alongside the schema fields (e.g. `pk`, `sk`, `type`, timestamps).
+  - A computed value can be a string, a function, or an array of parts; arrays are joined with `#`.
+  - Derived functions receive the validated schema data and return the computed value.
+  - Fields listed in `computed` become optional in `put` input (since they are computed).
+  - Returned instances include both schema and computed fields.
 
 Example:
 
@@ -135,7 +138,7 @@ const user = defineEntity({
     id: z.string(),
     email: z.email(),
   }),
-  keys: {
+  computed: {
     type: () => "user",
     pk: (u) => ["user", u.id], // => "user#123"
     sk: (u) => u.email,
@@ -145,9 +148,9 @@ const user = defineEntity({
 
 ## Operations
 
-- `put(data, options?)`: validates with Zod, expands keys, writes, and returns the parsed instance.
+- `put(data, options?)`: validates with Zod, computes computed fields, writes, and returns the parsed instance.
 - `get(key)`: requires key specification using actual key names (e.g., `pk`, `sk`), reads, returns instance or null.
-- `update(key, patch, options?)`: requires key specification, validates/expands, updates, and returns the new instance.
+- `update(key, patch, options?)`: requires key specification, validates/expands, updates, and returns the new instance. The patch can include both schema and computed fields.
 - `query(key, options?)`: requires key specification; supports partial expressions like `{beginsWith: "prefix"}`. Returns a paged array with `lastEvaluatedKey` and `next()`.
 - `queryOne(key, options?)`: first match or null.
 - `queryAll(key, options?)`: collects all pages for convenience.
@@ -224,8 +227,8 @@ Available condition expressions:
 ## Types and validation
 
 - Inputs are validated by your Zod schema (defaults apply too).
-- Returned instances are typed and include an `update(patch)` helper that delegates to `entity.update`.
+- Returned instances are typed as the combined schema + computed fields, and include an `update(patch)` helper that delegates to `entity.update`.
 
 ## Error handling
 
-Invalid input or unresolved keys throw an error. Ensure required fields for the index you target are provided (for example, missing `pk` or `sk` parts in your derived keys).
+Invalid input or unresolved computed fields throw an error. Ensure required fields for the index you target are provided (for example, missing `pk` or `sk` parts in your computed fields).

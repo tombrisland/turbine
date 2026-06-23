@@ -28,7 +28,7 @@ const user = defineEntity({
     bio: z.string().optional(),
     createdAt: z.iso.datetime({ local: true }).optional(),
   }),
-  keys: {
+  computed: {
     pk: (u) => ["user", u.id],
     sk: (u) => u.email,
     createdAt: (u) => u.createdAt ?? defaultCreatedAt.toISOString(),

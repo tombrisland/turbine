@@ -14,6 +14,7 @@ import {
   resolveIndex,
   resolveKeyValues,
 } from "./parsing";
+import type { ComputedFieldDefinition } from "./types/computed";
 import type { Entity, EntityDefinition } from "./types/entity";
 import type { TableIndexDefinition } from "./types/table";
 
@@ -21,9 +22,10 @@ export const defineEntity = <
   S extends z.ZodObject,
   TI extends TableIndexDefinition,
   IX extends Record<string, TableIndexDefinition>,
+  const D extends Record<string, ComputedFieldDefinition<z.infer<S>>>,
 >(
-  definition: EntityDefinition<S, TI, IX>,
-): Entity<EntityDefinition<S, TI, IX>, IX> => {
+  definition: EntityDefinition<S, TI, IX, D>,
+): Entity<EntityDefinition<S, TI, IX, D>, IX> => {
   // @ts-expect-error missing
   const entity: Entity<EntityDefinition<S, TI, IX>, IX> = {
     definition,
@@ -33,10 +35,7 @@ export const defineEntity = <
     const payload = await expandPayload(definition, data);
     const condition = generateConditionExpression(options?.conditions);
 
-    await definition.table.put({
-      Item: payload,
-      ...condition,
-    });
+    await definition.table.put({ Item: payload, ...condition });
 
     return parseInstance(definition, entity, payload);
   };
@@ -96,7 +95,7 @@ export const defineEntity = <
       .then((result) => result[0] || null);
   };
 
-  entity.queryAll = async (key, options) => {
+  entity.queryAll = async (key: any, options: any) => {
     let next = () => entity.query(key, options);
 
     const items: any[] = [];
@@ -126,11 +125,8 @@ export const defineEntity = <
     const [, Key] = resolveIndex(definition, { ...key, index: "table" });
     const condition = generateConditionExpression(options?.conditions);
 
-    await definition.table.delete({
-      Key: resolveKeyValues(Key),
-      ...condition,
-    });
+    await definition.table.delete({ Key: resolveKeyValues(Key), ...condition });
   };
 
-  return entity;
+  return entity as Entity<EntityDefinition<S, TI, IX, D>, IX>;
 };

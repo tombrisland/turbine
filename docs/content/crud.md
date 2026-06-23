@@ -20,7 +20,7 @@ const user = await users.put({
 
 - Validates data against the Zod schema
 - Applies default values from the schema
-- Generates all key values
+- Generates all computed field values
 - Returns an Instance with the created data
 
 ### With Defaults
@@ -34,7 +34,7 @@ const users = defineEntity({
     role: z.enum(["user", "admin"]).default("user"),
     createdAt: z.string().datetime().default(() => new Date().toISOString()),
   }),
-  keys: { /* ... */ },
+  computed: { /* ... */ },
 });
 
 const user = await users.put({
@@ -78,8 +78,8 @@ if (user) {
 Keys must match the format defined in your entity:
 
 ```typescript
-// If your keys are defined as:
-keys: {
+// If your computed fields are defined as:
+computed: {
   pk: (u) => ["user", u.id],
   sk: (u) => u.email,
 }
@@ -196,7 +196,7 @@ try {
 
 Common errors:
 - Schema validation failures
-- Invalid key configurations
+- Invalid computed field configurations
 - DynamoDB client errors
 
 ## Complete Example
@@ -222,7 +222,7 @@ const users = defineEntity({
     createdAt: z.string().datetime().default(() => new Date().toISOString()),
     updatedAt: z.string().datetime().optional(),
   }),
-  keys: {
+  computed: {
     pk: (u) => ["user", u.id],
     sk: (u) => ["profile", u.email],
   },

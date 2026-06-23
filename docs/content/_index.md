@@ -12,7 +12,7 @@ Turbine makes working with DynamoDB simple and type-safe. Define your entities w
 
 - **Type-safe** - Full TypeScript support with Zod schema validation
 - **Simple API** - Intuitive `defineTable` and `defineEntity` functions
-- **Flexible keys** - Composite keys, computed values, and automatic joining
+- **Flexible keys** - Computed fields for composite keys, computed values, and automatic joining
 - **Powerful queries** - Key conditions, filters, and built-in pagination
 - **Instance methods** - Convenient `update()` on returned objects
 
@@ -52,7 +52,7 @@ const users = defineEntity({
     name: z.string(),
     createdAt: z.string().datetime().default(() => new Date().toISOString()),
   }),
-  keys: {
+  computed: {
     type: () => "user",
     pk: (u) => ["user", u.id],
     sk: (u) => ["profile", u.email],

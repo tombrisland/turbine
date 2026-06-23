@@ -7,14 +7,8 @@ import { parseInstance, parsePagedResult } from "../../src/parsing";
 const table = defineTable({
   name: "test",
   indexes: {
-    table: {
-      hashKey: "pk",
-      rangeKey: "sk",
-    },
-    gsi1: {
-      hashKey: "type",
-      rangeKey: "sk",
-    },
+    table: { hashKey: "pk", rangeKey: "sk" },
+    gsi1: { hashKey: "type", rangeKey: "sk" },
   },
 });
 
@@ -23,11 +17,14 @@ const user = defineEntity({
   schema: z.object({
     id: z.string(),
     email: z.email(),
+    type: z.string(),
+    pk: z.string(),
+    sk: z.string(),
   }),
-  keys: {
+  computed: {
     type: () => "user",
-    pk: (user) => ["user", user.id],
-    sk: (user) => user.email,
+    pk: (u) => ["user", u.id],
+    sk: (u) => u.email,
   },
 });
 
@@ -42,9 +39,12 @@ describe("parsing: instance", () => {
       unknownKey: "hi from alien",
     };
 
-    expect(await parseInstance(user.definition, user, raw)).toEqual({
+    expect(await parseInstance(user.definition, user as any, raw)).toEqual({
       id: "123",
       email: "user@example.com",
+      pk: "user#123",
+      sk: "user@example.com",
+      type: "user",
       update: expect.any(Function),
     });
   });
@@ -68,16 +68,18 @@ describe("parsing: instance", () => {
 
     const page = await parsePagedResult(
       user.definition,
-      user,
+      user as any,
       raw.Items,
       raw.LastEvaluatedKey,
-      // @ts-expect-error not assignable
-      () => {},
+      (() => {}) as any,
     );
     expect(page.length).toBe(1);
     expect(page[0]).toEqual({
       id: "123",
       email: "user@example.com",
+      pk: "user#123",
+      sk: "user@example.com",
+      type: "user",
       update: expect.any(Function),
     });
 

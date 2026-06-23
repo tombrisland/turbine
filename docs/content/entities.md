@@ -2,7 +2,7 @@
 title = "Entities"
 +++
 
-Entities are the core building block of Turbine. They define your data model with a Zod schema and specify how keys are generated.
+Entities are the core building block of Turbine. They define your data model with a Zod schema and specify how computed fields are generated.
 
 ## Basic Usage
 
@@ -17,7 +17,7 @@ const users = defineEntity({
     email: z.string().email(),
     name: z.string(),
   }),
-  keys: {
+  computed: {
     pk: (user) => ["user", user.id],
     sk: (user) => user.email,
   },
@@ -32,7 +32,7 @@ The `defineEntity` function accepts:
 |----------|------|----------|-------------|
 | `table` | `Table` | Yes | The table from `defineTable` |
 | `schema` | `z.ZodObject` | Yes | A Zod object schema |
-| `keys` | `object` | Yes | Key generation functions |
+| `computed` | `object` | No | Computed field definitions |
 
 ## Schema Definition
 
@@ -76,14 +76,14 @@ Turbine supports all Zod types that can be serialized to JSON:
 - `z.default()`, `z.transform()`
 - Validation methods like `.email()`, `.uuid()`, `.min()`, `.max()`
 
-## Key Definitions
+## Computed Field Definitions
 
-Keys determine how items are stored and retrieved in DynamoDB. Each key can be:
+Computed fields determine how items are stored and retrieved in DynamoDB. Each computed field can be:
 
 ### Static Values
 
 ```typescript
-keys: {
+computed: {
   type: () => "user",
 }
 ```
@@ -91,7 +91,7 @@ keys: {
 ### Field References
 
 ```typescript
-keys: {
+computed: {
   pk: (entity) => entity.id,
   sk: (entity) => entity.email,
 }
@@ -102,7 +102,7 @@ keys: {
 Arrays are automatically joined with `#`:
 
 ```typescript
-keys: {
+computed: {
   pk: (user) => ["user", user.id],     // becomes "user#<id>"
   sk: (user) => ["profile", user.email], // becomes "profile#<email>"
 }
@@ -111,13 +111,13 @@ keys: {
 ### Computed Values
 
 ```typescript
-keys: {
+computed: {
   createdAt: (entity) => entity.createdAt || new Date().toISOString(),
   updatedAt: () => new Date().toISOString(),
 }
 ```
 
-### Example: Full Key Definition
+### Example: Full Computed Field Definition
 
 ```typescript
 const posts = defineEntity({
@@ -129,7 +129,7 @@ const posts = defineEntity({
     content: z.string(),
     createdAt: z.string().datetime().default(() => new Date().toISOString()),
   }),
-  keys: {
+  computed: {
     // Primary key
     pk: (post) => ["user", post.authorId],
     sk: (post) => ["post", post.createdAt, post.id],

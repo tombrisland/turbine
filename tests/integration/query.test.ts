@@ -69,6 +69,7 @@ describe("integration: queries and pagination", () => {
       comment.query({
         pk: ["post", "123"],
         sk: { beginsWith: "comment" },
+        // @ts-expect-error the index is wrong
         index: "invalid-index",
       }),
     ).rejects.toThrow('Index with name "invalid-index" is not defined');
@@ -77,6 +78,7 @@ describe("integration: queries and pagination", () => {
   it("throws when hashKey of specified index is not provided", async () => {
     await expect(
       comment.query({
+        // @ts-expect-error the wrong hashkey is used
         pk: ["post", "123"],
         sk: { beginsWith: "comment" },
         index: "gsi1",
@@ -87,6 +89,7 @@ describe("integration: queries and pagination", () => {
   it("throws when hashKey expression is not equals", async () => {
     await expect(
       comment.query({
+        // @ts-expect-error the key must be equals
         type: { beginsWith: "comment" },
         sk: { beginsWith: "comment" },
         index: "gsi1",
@@ -114,6 +117,6 @@ describe("integration: queries and pagination", () => {
     );
 
     expect(results).toHaveLength(1);
-    expect(results[0].meta.category).toBe("electronics");
+    expect(results[0]?.meta.category).toBe("electronics");
   });
 });

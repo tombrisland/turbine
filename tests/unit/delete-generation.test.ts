@@ -18,7 +18,7 @@ const user = defineEntity({
     id: z.string(),
     email: z.email(),
   }),
-  keys: {
+  computed: {
     pk: (u) => ["user", u.id],
     sk: (u) => u.email,
   },

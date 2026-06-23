@@ -163,4 +163,4 @@ const ordersTable = defineTable({
 ## Next Steps
 
 - [Entities](/entities) - Define data models using your table
-- [Key Patterns](/key-patterns) - Learn about key design strategies
+- [Computed Field Patterns](/key-patterns) - Learn about key design strategies

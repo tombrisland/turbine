@@ -19,8 +19,11 @@ const user = defineEntity({
     email: z.email(),
     name: z.string().optional(),
     role: z.enum(["admin", "user"]).default("user"),
+    type: z.string(),
+    pk: z.string(),
+    sk: z.string(),
   }),
-  keys: {
+  computed: {
     type: () => "user",
     pk: (u) => ["user", u.id],
     sk: (u) => u.email,

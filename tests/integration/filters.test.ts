@@ -29,7 +29,7 @@ describe("integration: filters", () => {
     );
 
     expect(results).toHaveLength(1);
-    expect(results[0].title).toBe("Hello Moon!");
+    expect(results[0]?.title).toBe("Hello Moon!");
   });
 
   it("filters posts by title", async () => {
@@ -58,7 +58,7 @@ describe("integration: filters", () => {
     );
 
     expect(results).toHaveLength(1);
-    expect(results[0].id).toContain("-p3");
+    expect(results[0]?.id).toContain("-p3");
   });
 
   it("filters with OR — returns posts matching either condition", async () => {

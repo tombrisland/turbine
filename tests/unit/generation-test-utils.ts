@@ -8,8 +8,8 @@ export const captureDynamoDBCommand = async <CommandInput>(
   fn: () => Promise<unknown>,
   // Some commands (update / get) want the response
   output: {
-    Item?: object;
-    Attributes?: object;
+    Item?: object | undefined;
+    Attributes?: object | undefined;
     Items?: object[];
     LastEvaluatedKey?: undefined;
   } = {
@@ -19,7 +19,7 @@ export const captureDynamoDBCommand = async <CommandInput>(
   vi.spyOn(table.client, "send").mockResolvedValue(output as never);
 
   await fn();
-  const call = vi.mocked(table.client.send).mock.calls[0][0];
+  const call = vi.mocked(table.client.send).mock.calls[0]![0];
 
   return call.input as CommandInput;
 };

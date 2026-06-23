@@ -11,7 +11,7 @@
     "build": "tsc",
     "lint": "eslint .",
     "test": "yarn test:types && yarn test:unit",
-    "test:types": "yarn tsc --noEmit tests/types/* --esModuleInterop",
+    "test:types": "yarn tsc -p tests/tsconfig.json",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration-localstack",
     "prepare": "yarn build",

@@ -1,7 +1,6 @@
-import { z } from "zod";
-
 import { TurbineError } from "./error";
 import { buildValue } from "./expressions";
+import type { ComputedFieldPrimitive } from "./types/computed";
 import type {
   Entity,
   EntityDefinition,
@@ -12,10 +11,9 @@ import type {
   QueryKey,
   TableKey,
 } from "./types/entity";
-import type { KeyDefinitionPrimitive } from "./types/key";
 import type { TableIndexDefinition } from "./types/table";
 
-export const parsePagedResult = async <D extends EntityDefinition<z.ZodObject>>(
+export const parsePagedResult = async <D extends EntityDefinition>(
   definition: D,
   entity: Entity<D>,
   items: unknown[] | undefined | null,
@@ -58,7 +56,7 @@ export const resolveKeyValues = (key: Record<string, any>) =>
   );
 
 export const resolveIndex = <
-  D extends EntityDefinition<z.ZodObject>,
+  D extends EntityDefinition,
   IX extends Record<string, TableIndexDefinition>,
 >(
   definition: D,
@@ -93,42 +91,45 @@ export const resolveIndex = <
   return [indexName, resolvedKey];
 };
 
-export const expandPayload = async <
-  S extends z.ZodObject,
-  D extends EntityDefinition<S>,
->(
-  definition: D,
-  data: Partial<z.infer<D["schema"]>> &
-    Omit<z.infer<D["schema"]>, keyof D["keys"]>,
-): Promise<Partial<z.infer<D["schema"]>>> => {
-  const parsedData = await definition.schema.parseAsync(data);
-  return {
-    ...parsedData,
-    ...parseKeys(definition, parsedData),
-  };
-};
-
-export const expandPartialPayload = async <S extends z.ZodObject>(
-  definition: EntityDefinition<S>,
-  data: Partial<z.infer<S>>,
-): Promise<Partial<Record<string, KeyDefinitionPrimitive>>> => {
-  const parsedData = await definition.schema.partial().parseAsync(data);
-  return {
-    ...parsedData,
-    ...parseKeys(definition, parsedData),
-  };
-};
-
-export const parseKeys = <S extends z.ZodObject>(
-  definition: EntityDefinition<S>,
+export const expandPayload = async (
+  definition: EntityDefinition,
   data: Record<string, unknown>,
-): Partial<Record<string, KeyDefinitionPrimitive>> => {
-  const keys: Partial<Record<string, KeyDefinitionPrimitive>> = {};
-  for (const key in definition.keys) {
-    let value = definition.keys[key];
+): Promise<Record<string, unknown>> => {
+  const parsedData = await definition.schema.partial().parseAsync(data);
+  const computedValues = parseComputed(definition, parsedData);
+  const merged = { ...parsedData, ...computedValues };
+  return definition.schema.parseAsync(merged);
+};
+
+export const expandPartialPayload = async (
+  definition: EntityDefinition,
+  data: Partial<Record<string, unknown>>,
+): Promise<Partial<Record<string, ComputedFieldPrimitive>>> => {
+  const parsedData = await definition.schema.partial().parseAsync(data);
+  const computedValues = parseComputed(definition, parsedData);
+  const computed = (definition.computed || {}) as Record<string, any>;
+
+  // Preserve explicitly provided values over computed values
+  for (const key in computed) {
+    if (key in data && data[key] !== undefined) {
+      computedValues[key] = data[key] as ComputedFieldPrimitive;
+    }
+  }
+
+  return { ...parsedData, ...computedValues };
+};
+
+export const parseComputed = (
+  definition: EntityDefinition,
+  data: Record<string, unknown>,
+): Partial<Record<string, ComputedFieldPrimitive>> => {
+  const computed = (definition.computed || {}) as Record<string, any>;
+  const result: Partial<Record<string, ComputedFieldPrimitive>> = {};
+  for (const key in computed) {
+    let value = computed[key];
     let invalid = false;
     if (typeof value === "function") {
-      value = value(data as z.infer<S>);
+      value = value(data);
     }
     if (Array.isArray(value)) {
       for (const part of value) {
@@ -137,31 +138,31 @@ export const parseKeys = <S extends z.ZodObject>(
       value = value.join("#");
     }
     if (!invalid && value !== undefined) {
-      keys[key] = value;
+      result[key] = value;
     }
   }
-  return keys;
+  return result;
 };
 
-export const parseInstance = async <D extends EntityDefinition<z.ZodObject>>(
+export const parseInstance = async <D extends EntityDefinition>(
   definition: D,
   entity: Entity<D>,
   input: unknown,
 ): Promise<Instance<Entity<D>>> => {
   const result = await definition.schema.parseAsync(input);
 
-  result.update = async (patch: Partial<z.infer<D["schema"]>>) => {
+  result.update = async (patch: any) => {
     const index = definition.table.definition.tableIndex;
-    const typedInput = input as Record<string, KeyDefinitionPrimitive>;
+    const rawInput = input as Record<string, ComputedFieldPrimitive>;
 
     const updated = await entity.update(
       (index.rangeKey
         ? {
-            [index.hashKey]: typedInput[index.hashKey],
-            [index.rangeKey]: typedInput[index.rangeKey],
+            [index.hashKey]: rawInput[index.hashKey],
+            [index.rangeKey]: rawInput[index.rangeKey],
           }
         : {
-            [index.hashKey]: typedInput[index.hashKey],
+            [index.hashKey]: rawInput[index.hashKey],
           }) as TableKey<D["table"]["definition"]["indexes"]["table"]>,
       patch,
     );
