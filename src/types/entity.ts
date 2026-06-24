@@ -72,11 +72,13 @@ export type NestedPaths<
 > = Depth extends 0
   ? never
   : {
-      [K in keyof T & string]: T[K] extends object
-        ?
-            | NestedPaths<T[K], DepthLimit[Depth], `${Prefix}${K}.`>
-            | `${Prefix}${K}`
-        : `${Prefix}${K}`;
+      [K in keyof T & string]: T[K] extends any[]
+        ? `${Prefix}${K}`
+        : T[K] extends object
+          ?
+              | NestedPaths<T[K], DepthLimit[Depth], `${Prefix}${K}.`>
+              | `${Prefix}${K}`
+          : `${Prefix}${K}`;
     }[keyof T & string];
 
 export type FieldConditions<D extends EntityDefinition> = {
@@ -118,15 +120,19 @@ export type QueryKey<IX extends Record<string, TableIndexDefinition>> = {
   [K in keyof IX]: QueryKeyForIndex<K & string, IX[K]>;
 }[keyof IX];
 
+export type ExactKeyExpression =
+  | { equals: KeyConditionPrimitiveValue }
+  | KeyConditionPrimitiveValue;
+
 export type TableKey<T extends TableIndexDefinition> =
   NonNullable<T["rangeKey"]> extends string
     ? {
-        [HH in T["hashKey"]]: HashKeyConditionExpression;
+        [HH in T["hashKey"]]: ExactKeyExpression;
       } & {
-        [RR in NonNullable<T["rangeKey"]>]: RangeKeyConditionExpression;
+        [RR in NonNullable<T["rangeKey"]>]: ExactKeyExpression;
       }
     : {
-        [HH in T["hashKey"]]: HashKeyConditionExpression;
+        [HH in T["hashKey"]]: ExactKeyExpression;
       };
 
 // Resolve computed field keys from entity definition
@@ -151,7 +157,10 @@ export type Entity<
     key: TableKey<D["table"]["definition"]["tableIndex"]>,
     options?: Omit<GetCommandInput, "TableName" | "Key">,
   ): Promise<Instance<Entity<D, IX>> | null>;
-  query(key: QueryKey<IX>, options?: QueryOptions<D>): Promise<PagedResult<D>>;
+  query(
+    key: QueryKey<IX>,
+    options?: QueryOptions<D>,
+  ): Promise<PagedResult<D, IX>>;
   queryOne(
     key: QueryKey<IX>,
     options?: QueryOptions<D>,

@@ -41,6 +41,8 @@ const table = defineTable({
 const users = defineEntity({
   table,
   schema: z.object({
+    pk: z.string(),
+    sk: z.string(),
     id: z.uuid(),
     email: z.email(),
     name: z.string().optional(),

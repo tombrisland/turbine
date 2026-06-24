@@ -1,3 +1,5 @@
+import process from "node:process";
+
 import { defineConfig } from "vitest/config";
 
 const integrationProject = (env = {}) => ({
@@ -5,8 +7,9 @@ const integrationProject = (env = {}) => ({
     include: ["tests/integration/**/*.test.ts"],
     globalSetup: ["./tests/integration/setup.ts"],
     env: {
-      AWS_REGION: "us-east-1",
-      TURBINE_TEST_TABLE: "turbine-integration-tests",
+      AWS_REGION: process.env.AWS_REGION || "us-east-1",
+      TURBINE_TEST_TABLE:
+        process.env.TURBINE_TEST_TABLE || "turbine-integration-tests",
       ...env,
     },
   },

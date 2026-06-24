@@ -95,7 +95,7 @@ export const defineEntity = <
       .then((result) => result[0] || null);
   };
 
-  entity.queryAll = async (key: any, options: any) => {
+  entity.queryAll = async (key, options) => {
     let next = () => entity.query(key, options);
 
     const items: any[] = [];

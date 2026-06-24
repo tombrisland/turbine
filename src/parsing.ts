@@ -163,7 +163,7 @@ export const parseInstance = async <D extends EntityDefinition>(
           }
         : {
             [index.hashKey]: rawInput[index.hashKey],
-          }) as TableKey<D["table"]["definition"]["indexes"]["table"]>,
+          }) as TableKey<D["table"]["definition"]["tableIndex"]>,
       patch,
     );
     Object.assign(result, updated);

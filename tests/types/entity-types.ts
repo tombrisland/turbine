@@ -18,6 +18,7 @@ const books = defineEntity({
     genre: z.literal(["fiction", "non-fiction"]),
     description: z.string(),
     metadata: z.object({ author: z.string() }),
+    array: z.array(z.string()).optional(),
     pk: z.string(),
     sk: z.string(),
     type: z.string(),
@@ -69,6 +70,9 @@ books.get({ pk: { equals: "pk1" }, sk: { equals: "sk1" } });
 
 // accepts key with primitive values
 books.get({ pk: "book#123", sk: "title" });
+
+// @ts-expect-error rejects non equals expressions
+books.get({ pk: { beginsWith: "pk1" }, sk: { beginsWith: "sk1" } });
 
 // rejects invalid key properties
 // @ts-expect-error invalid key properties
@@ -150,6 +154,17 @@ books.query(
     filters: {
       description: { beginsWith: "desc1" },
       "metadata.author": { equals: "author1" },
+    },
+  },
+);
+
+// rejects array properties in filter dot notation
+books.query(
+  { pk: "pk1" },
+  {
+    filters: {
+      // @ts-expect-error array treated as terminal node
+      "array.length": { beginsWith: "el" },
     },
   },
 );
