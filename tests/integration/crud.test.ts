@@ -81,4 +81,26 @@ describe("integration: CRUD", () => {
     });
     expect(fetched).toBeNull();
   });
+
+  it("rejects a conditional put when the item already exists", async () => {
+    const id = `${runId}-cond`;
+    await user.put({
+      id,
+      email: `${id}@example.com`,
+      username: `user_${id}`,
+      createdAt: new Date().toISOString(),
+    });
+
+    await expect(
+      user.put(
+        {
+          id,
+          email: `${id}@example.com`,
+          username: `user_${id}`,
+          createdAt: new Date().toISOString(),
+        },
+        { conditions: { id: { notExists: true } } },
+      ),
+    ).rejects.toThrow();
+  });
 });

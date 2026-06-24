@@ -7,14 +7,8 @@ import { expandPartialPayload, expandPayload } from "../../src/parsing";
 const table = defineTable({
   name: "test",
   indexes: {
-    table: {
-      hashKey: "pk",
-      rangeKey: "sk",
-    },
-    gsi1: {
-      hashKey: "type",
-      rangeKey: "sk",
-    },
+    table: { hashKey: "pk", rangeKey: "sk" },
+    gsi1: { hashKey: "type", rangeKey: "sk" },
   },
 });
 
@@ -23,8 +17,11 @@ const user = defineEntity({
   schema: z.object({
     id: z.string(),
     email: z.email(),
+    type: z.string(),
+    pk: z.string(),
+    sk: z.string(),
   }),
-  keys: {
+  computed: {
     type: () => "user",
     pk: (user) => ["user", user.id],
     sk: (user) => user.email,
@@ -39,8 +36,10 @@ const post = defineEntity({
       .optional()
       .default(() => "random"),
     title: z.string(),
+    sk: z.string(),
+    pk: z.string(),
   }),
-  keys: {
+  computed: {
     sk: () => "post",
     pk: (post) => ["post", post.id],
   },
@@ -68,7 +67,6 @@ describe("parsing: payload", () => {
       email: "user@example.com",
     };
 
-    // @ts-expect-error expect
     await expect(expandPayload(user.definition, putPayload)).rejects.toThrow();
   });
 
@@ -77,7 +75,6 @@ describe("parsing: payload", () => {
       title: "Random post",
     };
 
-    // @ts-expect-error expect
     expect(await expandPayload(post.definition, payload)).toEqual({
       pk: "post#random",
       sk: "post",

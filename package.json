@@ -3,6 +3,8 @@
   "version": "0.0.1",
   "description": "Entity mapping and query library for DynamoDB",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "packageManager": "yarn@1.22.22",
   "files": [
     "dist"
   ],
@@ -10,8 +12,9 @@
     "build": "tsc",
     "lint": "eslint .",
     "test": "yarn test:types && yarn test:unit",
-    "test:types": "yarn tsc --noEmit tests/type-checking.ts --esModuleInterop",
-    "test:unit": "vitest . --coverage",
+    "test:types": "yarn tsc -p tests/tsconfig.json",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration-localstack",
     "prepare": "yarn build",
     "release": "semantic-release"
   },

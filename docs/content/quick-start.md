@@ -53,7 +53,7 @@ const users = defineEntity({
     role: z.enum(["user", "admin"]).default("user"),
     createdAt: z.string().datetime().default(() => new Date().toISOString()),
   }),
-  keys: {
+  computed: {
     type: () => "user",
     pk: (user) => ["user", user.id],
     sk: (user) => ["profile", user.email],
@@ -61,7 +61,7 @@ const users = defineEntity({
 });
 ```
 
-Key functions receive the entity data and return values that become DynamoDB attributes. Arrays are automatically joined with `#`.
+Computed field functions receive the entity data and return values that become DynamoDB attributes. Arrays are automatically joined with `#`.
 
 ## Step 3: Create Items
 
@@ -170,7 +170,7 @@ const users = defineEntity({
     name: z.string(),
     createdAt: z.string().datetime().default(() => new Date().toISOString()),
   }),
-  keys: {
+  computed: {
     type: () => "user",
     pk: (u) => ["user", u.id],
     sk: (u) => ["profile", u.email],

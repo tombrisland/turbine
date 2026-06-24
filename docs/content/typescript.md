@@ -26,7 +26,7 @@ function displayUser(user: User) {
 An Instance contains:
 
 1. **All schema fields** - Every field from your Zod schema
-2. **Generated key values** - The actual key values stored in DynamoDB
+2. **Computed field values** - The computed values stored in DynamoDB
 3. **update() method** - Convenience method for updates
 
 ```typescript
@@ -41,7 +41,7 @@ user.id;    // string
 user.email; // string
 user.name;  // string
 
-// Key values (also present as attributes)
+// Computed field values (also present as attributes)
 user.pk;    // "user#123"
 user.sk;    // "alice@example.com"
 
@@ -63,7 +63,7 @@ const users = defineEntity({
     role: z.enum(["user", "admin"]),
     createdAt: z.string().datetime(),
   }),
-  keys: { /* ... */ },
+  computed: { /* ... */ },
 });
 
 // TypeScript knows the exact shape
@@ -226,7 +226,7 @@ type UserData = z.infer<typeof userSchema>;
 const users = defineEntity({
   table,
   schema: userSchema,
-  keys: { /* ... */ },
+  computed: { /* ... */ },
 });
 
 // Instance type (includes update method)
@@ -265,7 +265,7 @@ export const userSchema = z.object({
 export const users = defineEntity({
   table,
   schema: userSchema,
-  keys: {
+  computed: {
     type: () => "user",
     pk: (u) => ["user", u.id],
     sk: (u) => ["profile", u.email],
@@ -305,5 +305,5 @@ function toResponse(user: User): UserResponse {
 
 ## Next Steps
 
-- [Key Patterns](/key-patterns) - Design effective key structures
+- [Computed Field Patterns](/key-patterns) - Design effective key structures
 - [Error Handling](/errors) - Handle Turbine errors

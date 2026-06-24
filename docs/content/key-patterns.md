@@ -1,15 +1,15 @@
 +++
-title = "Key Patterns"
+title = "Computed Field Patterns"
 +++
 
-Effective key design is crucial for DynamoDB performance. Turbine makes it easy to implement common patterns.
+Effective key design is crucial for DynamoDB performance. Turbine makes it easy to implement common patterns using computed fields.
 
-## How Keys Work
+## How Computed Fields Work
 
-In Turbine, keys are defined as functions that transform your entity data into DynamoDB attributes:
+In Turbine, computed fields are defined as functions that transform your entity data into DynamoDB attributes:
 
 ```typescript
-keys: {
+computed: {
   pk: (user) => ["user", user.id],     // "user#123"
   sk: (user) => ["profile", user.email], // "profile#alice@example.com"
 }
@@ -47,7 +47,7 @@ const users = defineEntity({
     email: z.string(),
     name: z.string(),
   }),
-  keys: {
+  computed: {
     type: () => "user",
     pk: (u) => ["user", u.id],
     sk: () => "profile",
@@ -61,7 +61,7 @@ const posts = defineEntity({
     authorId: z.string(),
     title: z.string(),
   }),
-  keys: {
+  computed: {
     type: () => "post",
     pk: (p) => ["user", p.authorId],
     sk: (p) => ["post", p.id],
@@ -103,7 +103,7 @@ const posts = defineEntity({
     title: z.string(),
     createdAt: z.string().datetime(),
   }),
-  keys: {
+  computed: {
     pk: (p) => ["user", p.authorId],
     sk: (p) => ["post", p.createdAt, p.id],
   },
@@ -128,7 +128,7 @@ const posts = defineEntity({
     authorId: z.string(),
     title: z.string(),
   }),
-  keys: {
+  computed: {
     pk: (p) => ["user", p.authorId],
     sk: (p) => ["post", p.id],
     // GSI for ID lookup
@@ -157,7 +157,7 @@ const users = defineEntity({
     email: z.string().email(),
     username: z.string(),
   }),
-  keys: {
+  computed: {
     pk: (u) => ["user", u.id],
     sk: () => "profile",
     // GSI for email lookup (unique)
@@ -190,7 +190,7 @@ const posts = defineEntity({
     title: z.string(),
     createdAt: z.string().datetime(),
   }),
-  keys: {
+  computed: {
     pk: (p) => ["user", p.authorId],
     sk: (p) => ["post", p.createdAt, p.id],
     // Global feed GSI
@@ -227,7 +227,7 @@ const members = defineEntity({
     userId: z.string(),
     role: z.string(),
   }),
-  keys: {
+  computed: {
     pk: (m) => ["org", m.orgId],
     sk: (m) => ["team", m.teamId, "member", m.userId],
   },
@@ -308,7 +308,7 @@ const posts = defineEntity({
     createdAt: z.string().datetime().default(() => new Date().toISOString()),
     updatedAt: z.string().datetime().optional(),
   }),
-  keys: {
+  computed: {
     // Primary: User's posts sorted by date
     pk: (p) => ["user", p.authorId],
     sk: (p) => ["post", p.createdAt, p.id],
@@ -340,5 +340,5 @@ const posts = defineEntity({
 
 ## Next Steps
 
-- [Querying](/querying) - Use your keys effectively
-- [Error Handling](/errors) - Handle key-related errors
+- [Querying](/querying) - Use your computed fields effectively
+- [Error Handling](/errors) - Handle computed field errors

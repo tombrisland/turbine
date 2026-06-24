@@ -1,0 +1,99 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`put-generation > basic put with only required fields 1`] = `
+{
+  "Item": {
+    "email": "user@example.com",
+    "id": "123",
+    "pk": "user#123",
+    "role": "user",
+    "sk": "user@example.com",
+    "type": "user",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`put-generation > put derives keys from data 1`] = `
+{
+  "Item": {
+    "email": "alice@example.com",
+    "id": "abc-123",
+    "pk": "user#abc-123",
+    "role": "user",
+    "sk": "alice@example.com",
+    "type": "user",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`put-generation > put strips unknown field 1`] = `
+{
+  "Item": {
+    "email": "user@example.com",
+    "id": "123",
+    "pk": "user#123",
+    "role": "user",
+    "sk": "user@example.com",
+    "type": "user",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`put-generation > put with condition expression 1`] = `
+{
+  "ConditionExpression": "attribute_not_exists(#condition_email)",
+  "ExpressionAttributeNames": {
+    "#condition_email": "email",
+  },
+  "ExpressionAttributeValues": {},
+  "Item": {
+    "email": "user@example.com",
+    "id": "123",
+    "pk": "user#123",
+    "role": "user",
+    "sk": "user@example.com",
+    "type": "user",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`put-generation > put with multiple conditions 1`] = `
+{
+  "ConditionExpression": "attribute_not_exists(#condition_email) AND #condition_role = :condition_1",
+  "ExpressionAttributeNames": {
+    "#condition_email": "email",
+    "#condition_role": "role",
+  },
+  "ExpressionAttributeValues": {
+    ":condition_1": "user",
+  },
+  "Item": {
+    "email": "user@example.com",
+    "id": "123",
+    "pk": "user#123",
+    "role": "user",
+    "sk": "user@example.com",
+    "type": "user",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`put-generation > put with optional fields 1`] = `
+{
+  "Item": {
+    "email": "user@example.com",
+    "id": "123",
+    "name": "Alice",
+    "pk": "user#123",
+    "role": "user",
+    "sk": "user@example.com",
+    "type": "user",
+  },
+  "TableName": "test-table",
+}
+`;

@@ -1,7 +1,7 @@
 import { v4 as uuid } from "uuid";
 import { describe, it, expect } from "vitest";
 
-import { comment, post, user } from "./schema";
+import { comment, post, product, user } from "./schema";
 
 describe("integration: queries and pagination", () => {
   it("queries global feed via gsi1 and paginates", async () => {
@@ -69,6 +69,7 @@ describe("integration: queries and pagination", () => {
       comment.query({
         pk: ["post", "123"],
         sk: { beginsWith: "comment" },
+        // @ts-expect-error the index is wrong
         index: "invalid-index",
       }),
     ).rejects.toThrow('Index with name "invalid-index" is not defined');
@@ -77,6 +78,7 @@ describe("integration: queries and pagination", () => {
   it("throws when hashKey of specified index is not provided", async () => {
     await expect(
       comment.query({
+        // @ts-expect-error the wrong hashkey is used
         pk: ["post", "123"],
         sk: { beginsWith: "comment" },
         index: "gsi1",
@@ -87,10 +89,34 @@ describe("integration: queries and pagination", () => {
   it("throws when hashKey expression is not equals", async () => {
     await expect(
       comment.query({
+        // @ts-expect-error the key must be equals
         type: { beginsWith: "comment" },
         sk: { beginsWith: "comment" },
         index: "gsi1",
       }),
     ).rejects.toThrow("Query key condition not supported");
+  });
+
+  it("filters query results on a nested attribute using dot-notation", async () => {
+    const run = uuid();
+
+    await product.put({
+      id: `${run}-electronics`,
+      name: "Laptop",
+      meta: { category: "electronics", active: true },
+    });
+    await product.put({
+      id: `${run}-clothing`,
+      name: "T-Shirt",
+      meta: { category: "clothing", active: true },
+    });
+
+    const results = await product.queryAll(
+      { pk: ["product", `${run}-electronics`] },
+      { filters: { "meta.category": "electronics" } },
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.meta.category).toBe("electronics");
   });
 });

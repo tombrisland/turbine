@@ -312,5 +312,5 @@ const postsInJanuary = await posts.queryAll({
 
 ## Next Steps
 
-- [Key Patterns](/key-patterns) - Design effective key structures
+- [Computed Field Patterns](/key-patterns) - Design effective key structures
 - [TypeScript](/typescript) - Type safety with queries

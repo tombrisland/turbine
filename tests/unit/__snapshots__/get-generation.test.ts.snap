@@ -1,0 +1,43 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`get-generation > get by primary key 1`] = `
+{
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`get-generation > get key array joined with # 1`] = `
+{
+  "Key": {
+    "pk": "user#abc-def",
+    "sk": "test@example.com",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`get-generation > get with ConsistentRead 1`] = `
+{
+  "ConsistentRead": true,
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "TableName": "test-table",
+}
+`;
+
+exports[`get-generation > get with ProjectionExpression 1`] = `
+{
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "ProjectionExpression": "id, email",
+  "TableName": "test-table",
+}
+`;

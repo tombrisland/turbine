@@ -5,7 +5,7 @@
 Entity mapping and query helpers for DynamoDB using Zod schemas and the AWS SDK v3. Define your table and entities once, then put, get, update, and query with type-safe objects.
 
 - Small, direct, and type-friendly
-- Derive keys and computed fields from your data
+- Derive composite keys, defaults, and computed fields from your data
 - Works with your existing DynamoDB DocumentClient
 
 ## Getting started
@@ -41,14 +41,16 @@ const table = defineTable({
 const users = defineEntity({
   table,
   schema: z.object({
+    pk: z.string(),
+    sk: z.string(),
     id: z.uuid(),
     email: z.email(),
     name: z.string().optional(),
     createdAt: z.iso.datetime().optional(),
     updatedAt: z.iso.datetime().optional(),
   }),
-  // Compute keys/fields from the input data
-  keys: {
+  // Derive fields from the input data
+  computed: {
     pk: (u) => ["user", u.id], // becomes `user#{id}`
     sk: (u) => u.email,
     createdAt: (u) => u.createdAt || new Date().toISOString(),
@@ -78,13 +80,32 @@ const one = await users.queryOne({
   sk: { beginsWith: "user@" },
 });
 const all = await users.queryAll({ pk: ["user", user.id] });
+
+// Conditional writes - only update if the item already exists
+await users.update(
+  { pk: ["user", user.id], sk: user.email },
+  { name: "Randy Newman" },
+  { conditions: { email: { exists: true } } },
+);
+
+// Conditional put - only insert if no item with this pk/sk exists yet
+await users.put(
+  { id: "00000000-0000-0000-0000-000000000002", email: "new@example.com" },
+  { conditions: { pk: { notExists: true } } },
+);
+
+// Conditional delete - only delete if the name matches
+await users.delete(
+  { pk: ["user", user.id], sk: user.email },
+  { conditions: { name: "Randy Newman" } },
+);
 ```
 
 ## Defining tables
 
 - You must define at least one index named `table`. This specifies the primary keys for your default index.
-- The `hashKey` and optional `rangeKey` must match the attribute names you’ll store on items (for example `pk`/`sk`).
-- You can add GSIs by name. Use those attribute names in your entity key derivations.
+- The `hashKey` and optional `rangeKey` must match the attribute names you'll store on items (for example `pk`/`sk`).
+- You can add GSIs by name. Use those attribute names in your entity's computed fields.
 
 Optionally pass your own `DynamoDBDocumentClient` via `documentClient` to reuse configuration. By default, a client is created with `convertEmptyValues: true` and `removeUndefinedValues: true`.
 
@@ -103,9 +124,12 @@ const table = defineTable({
 
 ## Defining entities
 
-- `schema` is a Zod object. It drives validation and types.
-- `keys` derives fields that are written to the item (e.g. `pk`, `sk`, `type`, timestamps).
-  - A key value can be a string, a function, or an array of parts; arrays join with `#`.
+- `schema` is a Zod object. It drives validation and types for the input data.
+- `computed` computes fields that are written to the item alongside the schema fields (e.g. `pk`, `sk`, `type`, timestamps).
+  - A computed value can be a string, a function, or an array of parts; arrays are joined with `#`.
+  - Derived functions receive the validated schema data and return the computed value.
+  - Fields listed in `computed` become optional in `put` input (since they are computed).
+  - Returned instances include both schema and computed fields.
 
 Example:
 
@@ -116,7 +140,7 @@ const user = defineEntity({
     id: z.string(),
     email: z.email(),
   }),
-  keys: {
+  computed: {
     type: () => "user",
     pk: (u) => ["user", u.id], // => "user#123"
     sk: (u) => u.email,
@@ -126,37 +150,87 @@ const user = defineEntity({
 
 ## Operations
 
-- put(data): validates with Zod, expands keys, writes, and returns the parsed instance.
-- get(key): requires key specification using actual key names (e.g., `pk`, `sk`), reads, returns instance or null.
-- update(key, patch): requires key specification, validates/expands, updates, and returns the new instance.
-- query(key, options?): requires key specification; supports partial expressions like `{beginsWith: "prefix"}`. Returns a paged array with `lastEvaluatedKey` and `next()`.
-- queryOne(key, options?): first match or null.
-- queryAll(key, options?): collects all pages for convenience.
-- delete(key): requires key specification, deletes the item.
+- `put(data, options?)`: validates with Zod, computes computed fields, writes, and returns the parsed instance.
+- `get(key)`: requires key specification using actual key names (e.g., `pk`, `sk`), reads, returns instance or null.
+- `update(key, patch, options?)`: requires key specification, validates/expands, updates, and returns the new instance. The patch can include both schema and computed fields.
+- `query(key, options?)`: requires key specification; supports partial expressions like `{beginsWith: "prefix"}`. Returns a paged array with `lastEvaluatedKey` and `next()`.
+- `queryOne(key, options?)`: first match or null.
+- `queryAll(key, options?)`: collects all pages for convenience.
+- `delete(key, options?)`: requires key specification, deletes the item.
 
 ### Key Specification
 
-Keys must be specified precisely using the actual key names defined in your entity. Key arrays are automatically converted to strings joined with `#`.
+Keys must be specified precisely using the actual names specified in your table. Key arrays are automatically converted to strings joined with `#`. TypeScript enforces the correct shape for each index — the hash key is required and the range key is typed as a `RangeKeyConditionExpression`.
 
 ```ts
 // Get with precise keys
 await users.get({ pk: ["user", "123"], sk: "user@example.com" });
 
-// Query with complex key expressions and custom indexes
+// Range key accepts expression objects
+await users.queryOne({
+  pk: ["user", "123"],
+  sk: { beginsWith: "user@" },
+});
+
+// Query a GSI — TypeScript constrains the key shape to that index
 await posts.query({
-  index: "type-sk",
+  index: "type_sk",
+  // Now type must be specified
   type: "comment",
   sk: { beginsWith: "user#123#" },
 });
 ```
 
-Query options match DynamoDB’s `QueryCommandInput` (minus the expression fields that Turbine builds for you), so you can set things like `Limit`, `ExclusiveStartKey`, `ScanIndexForward`, `ConsistentRead`, etc.
+Query options match DynamoDB's `QueryCommandInput` (minus the expression fields that Turbine builds for you), so you can set things like `Limit`, `ExclusiveStartKey`, `ScanIndexForward`, `ConsistentRead`, etc.
+
+### Condition Expressions
+
+`put`, `update`, and `delete` accept an optional `conditions` map. Each key is a schema field name (dot-notation supported for nested fields) and the value is a `FilterExpression`. The condition must be satisfied for the write to proceed; otherwise DynamoDB throws a `ConditionalCheckFailedException`.
+
+```ts
+// Only insert if no item with this pk exists yet
+await users.put(
+  { id: "00000000-0000-0000-0000-000000000002", email: "new@example.com" },
+  { conditions: { pk: { notExists: true } } },
+);
+
+// Only update if the item already exists
+await users.update(
+  { pk: ["user", user.id], sk: user.email },
+  { name: "Randy Newman" },
+  { conditions: { email: { exists: true } } },
+);
+
+// Only delete if a specific value matches
+await users.delete(
+  { pk: ["user", user.id], sk: user.email },
+  { conditions: { name: "Randy Newman" } },
+);
+
+// Nested field condition using dot-notation
+await users.update(
+  { pk: ["user", user.id], sk: user.email },
+  { name: "Randy Newman" },
+  { conditions: { "address.country": "US" } },
+);
+```
+
+Available condition expressions:
+
+| Expression | Meaning |
+|---|---|
+| `{ exists: true }` | Attribute must exist |
+| `{ notExists: true }` | Attribute must not exist |
+| `{ equals: value }` | Attribute equals value |
+| `{ beginsWith: prefix }` | String attribute begins with prefix |
+| `{ between: [lo, hi] }` | Attribute is between two values (inclusive) |
+| `value` (primitive) | Shorthand for `{ equals: value }` |
 
 ## Types and validation
 
 - Inputs are validated by your Zod schema (defaults apply too).
-- Returned instances are typed and include an `update(patch)` helper that delegates to `entity.update`.
+- Returned instances are typed as the combined schema + computed fields, and include an `update(patch)` helper that delegates to `entity.update`.
 
 ## Error handling
 
-Invalid input or unresolved keys throw an error. Ensure required fields for the index you target are provided (for example, missing `pk` or `sk` parts in your derived keys).
+Invalid input or unresolved computed fields throw an error. Ensure required fields for the index you target are provided (for example, missing `pk` or `sk` parts in your computed fields).

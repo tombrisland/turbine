@@ -34,7 +34,7 @@ const users = defineEntity({
     email: z.string().email(),
     age: z.number().min(0),
   }),
-  keys: { /* ... */ },
+  computed: { /* ... */ },
 });
 
 // Missing required field
@@ -188,15 +188,15 @@ async function putWithLogging<T>(entity: Entity<any>, data: T) {
 }
 ```
 
-### Check Key Values
+### Check Computed Field Values
 
-Verify generated keys:
+Verify generated values:
 
 ```typescript
 const users = defineEntity({
   table,
   schema: z.object({ /* ... */ }),
-  keys: {
+  computed: {
     pk: (u) => {
       const key = ["user", u.id];
       console.log("Generated pk:", key);
@@ -235,7 +235,7 @@ console.log("Stored item:", {
 | Schema validation failed | Data doesn't match Zod schema | Check required fields, types, and constraints |
 | Index not defined | Query uses unknown index name | Verify index exists in `defineTable` |
 | Missing key field | Query missing required key | Include all hash/range keys for the index |
-| Invalid key value | Key function returned invalid value | Check key functions return strings, numbers, or arrays |
+| Invalid computed field value | Derived function returned invalid value | Check computed functions return strings, numbers, or arrays |
 
 ## Next Steps
 

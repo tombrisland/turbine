@@ -1,0 +1,147 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`update-generation > update a single field 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#createdAt": "createdAt",
+    "#name": "name",
+  },
+  "ExpressionAttributeValues": {
+    ":createdAt": "2012-02-18T00:00:00.000Z",
+    ":name": "Alice",
+  },
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "ReturnValues": "ALL_NEW",
+  "TableName": "test-table",
+  "UpdateExpression": "SET #name = :name, #createdAt = if_not_exists(#createdAt, :createdAt)",
+}
+`;
+
+exports[`update-generation > update merges condition and update ExpressionAttributeNames 1`] = `
+{
+  "ConditionExpression": "#condition_age > :condition_0",
+  "ExpressionAttributeNames": {
+    "#condition_age": "age",
+    "#createdAt": "createdAt",
+    "#name": "name",
+  },
+  "ExpressionAttributeValues": {
+    ":condition_0": 18,
+    ":createdAt": "2012-02-18T00:00:00.000Z",
+    ":name": "Alice",
+  },
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "ReturnValues": "ALL_NEW",
+  "TableName": "test-table",
+  "UpdateExpression": "SET #name = :name, #createdAt = if_not_exists(#createdAt, :createdAt)",
+}
+`;
+
+exports[`update-generation > update multiple fields 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#age": "age",
+    "#createdAt": "createdAt",
+    "#name": "name",
+  },
+  "ExpressionAttributeValues": {
+    ":age": 30,
+    ":createdAt": "2012-02-18T00:00:00.000Z",
+    ":name": "Alice",
+  },
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "ReturnValues": "ALL_NEW",
+  "TableName": "test-table",
+  "UpdateExpression": "SET #name = :name, #age = :age, #createdAt = if_not_exists(#createdAt, :createdAt)",
+}
+`;
+
+exports[`update-generation > update protects createdAt by default 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#createdAt": "createdAt",
+  },
+  "ExpressionAttributeValues": {
+    ":createdAt": "2024-01-01T00:00:00.000Z",
+  },
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "ReturnValues": "ALL_NEW",
+  "TableName": "test-table",
+  "UpdateExpression": "SET #createdAt = if_not_exists(#createdAt, :createdAt)",
+}
+`;
+
+exports[`update-generation > update removes field by setting null 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#age": "age",
+    "#createdAt": "createdAt",
+    "#name": "name",
+  },
+  "ExpressionAttributeValues": {
+    ":age": 10,
+    ":createdAt": "2012-02-18T00:00:00.000Z",
+  },
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "ReturnValues": "ALL_NEW",
+  "TableName": "test-table",
+  "UpdateExpression": "SET #age = :age, #createdAt = if_not_exists(#createdAt, :createdAt) REMOVE #name",
+}
+`;
+
+exports[`update-generation > update with array key joined 1`] = `
+{
+  "ExpressionAttributeNames": {
+    "#createdAt": "createdAt",
+    "#name": "name",
+  },
+  "ExpressionAttributeValues": {
+    ":createdAt": "2012-02-18T00:00:00.000Z",
+    ":name": "Charlie",
+  },
+  "Key": {
+    "pk": "user#abc-def",
+    "sk": "test@example.com",
+  },
+  "ReturnValues": "ALL_NEW",
+  "TableName": "test-table",
+  "UpdateExpression": "SET #name = :name, #createdAt = if_not_exists(#createdAt, :createdAt)",
+}
+`;
+
+exports[`update-generation > update with condition expression 1`] = `
+{
+  "ConditionExpression": "attribute_exists(#condition_name)",
+  "ExpressionAttributeNames": {
+    "#condition_name": "name",
+    "#createdAt": "createdAt",
+    "#name": "name",
+  },
+  "ExpressionAttributeValues": {
+    ":createdAt": "2012-02-18T00:00:00.000Z",
+    ":name": "Alice",
+  },
+  "Key": {
+    "pk": "user#123",
+    "sk": "user@example.com",
+  },
+  "ReturnValues": "ALL_NEW",
+  "TableName": "test-table",
+  "UpdateExpression": "SET #name = :name, #createdAt = if_not_exists(#createdAt, :createdAt)",
+}
+`;

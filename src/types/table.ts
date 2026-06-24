@@ -1,4 +1,4 @@
-import {
+import type {
   DeleteCommandInput,
   DeleteCommandOutput,
   DynamoDBDocumentClient,
@@ -17,7 +17,7 @@ export type TableIndexDefinition = {
   rangeKey?: string;
 };
 
-export type TableDefinition = {
+export type TableDefinitionInput = {
   documentClient?: DynamoDBDocumentClient;
   name: string;
   debug?: boolean;
@@ -27,8 +27,22 @@ export type TableDefinition = {
   };
 };
 
-export type Table = {
-  definition: TableDefinition;
+export type TableDefinition<
+  TI extends TableIndexDefinition = TableIndexDefinition,
+  IX extends Record<string, TableIndexDefinition> = Record<
+    string,
+    TableIndexDefinition
+  >,
+> = {
+  documentClient?: DynamoDBDocumentClient;
+  name: string;
+  debug?: boolean;
+  tableIndex: TI;
+  indexes: IX;
+};
+
+export type Table<D extends TableDefinition = TableDefinition> = {
+  definition: D;
   client: DynamoDBDocumentClient;
   put: (
     params: Omit<PutCommandInput, "TableName">,
